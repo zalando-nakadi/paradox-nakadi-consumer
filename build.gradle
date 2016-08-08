@@ -1,0 +1,264 @@
+import org.gradle.plugins.signing.Sign
+
+buildscript {
+    ext {
+        springBootVersion = '1.3.5.RELEASE'
+        curatorVersion = '2.9.1'
+        slf4jVersion = '1.7.21'
+        jacksonVersion = '2.6.6'
+        httpClientVersion = '4.5.2'
+    }
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+allprojects {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+}
+configure(allprojects) { project ->
+    group = "org.zalando.paradox"
+    version = rootProject.version
+
+    apply plugin: "java"
+    apply plugin: "maven"
+    apply plugin: "signing"
+
+    compileJava {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+        options.encoding = 'UTF-8'
+
+        apply plugin: 'findbugs'
+
+        findbugs {
+            reportLevel = "high"
+            sourceSets = []
+            findbugsMain {
+                ignoreFailures = false
+                reports {
+                    xml.enabled = false
+                    html.enabled = !xml.isEnabled()
+                }
+            }
+        }
+
+        dependencies {
+            compile("com.google.guava:guava:19.0")
+            compile("org.apache.commons:commons-lang3:3.4")
+            compile("com.google.code.findbugs:jsr305:3.0.1")
+        }
+    }
+
+    compileTestJava {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+        options.encoding = 'UTF-8'
+
+        dependencies {
+            testCompile ('junit:junit:4.12') {
+                exclude group: 'org.hamcrest'
+            }
+            testCompile 'org.mockito:mockito-all:1.10.19'
+            testCompile 'org.assertj:assertj-core:3.5.1'
+            testCompile "org.slf4j:slf4j-log4j12:${slf4jVersion}"
+        }
+
+        test {
+            systemProperty("java.awt.headless", "true")
+            scanForTestClasses = true
+            include(["**/*Test.class", "**/*Tests.class"])
+            testLogging {
+                // set options for log level LIFECYCLE
+                events "passed", "skipped", "failed", "standardOut"
+                showExceptions true
+                exceptionFormat "short"
+                showCauses true
+                showStackTraces true
+                showStandardStreams false
+                // set options for log level DEBUG and INFO
+                debug {
+                    events "started", "passed", "skipped", "failed", "standardOut", "standardError"
+                    exceptionFormat "full"
+                }
+                info.events = debug.events
+                info.exceptionFormat = debug.exceptionFormat
+
+                afterSuite { desc, result ->
+                    if (!desc.parent) { // will match the outermost suite
+                        def output = "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)"
+                        def startItem = '|  ', endItem = '  |'
+                        def repeatLength = startItem.length() + output.length() + endItem.length()
+                        println('\n' + ('-' * repeatLength) + '\n' + startItem + output + endItem + '\n' + ('-' * repeatLength))
+                    }
+                }
+            }
+        }
+    }
+
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    artifacts {
+        archives sourcesJar
+    }
+
+    uploadArchives {
+        if (project.hasProperty('sign')) {
+          signing {
+            sign configurations.archives
+          }
+        }
+        repositories {
+            mavenDeployer {
+              def ossrhUsername = rootProject.hasProperty('ossrhUsername')?rootProject.ossrhUsername:''
+              def ossrhPassword = rootProject.hasProperty('ossrhPassword')?rootProject.ossrhPassword:''
+
+              beforeDeployment { MavenDeployment deployment -> if (project.hasProperty('sign')) { signing.signPom(deployment) } }
+
+              repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+              }
+
+              snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+              }
+
+              pom.project {
+                name 'Paradox Nakadi Consumer'
+                packaging 'jar'
+                description 'Paradox high level Nakadi consumer'
+                url 'https://github.com/zalando-incubator/paradox-nakadi-consumer'
+
+                scm {
+                  connection 'https://github.com/zalando-incubator/paradox-nakadi-consumer.git'
+                  developerConnection 'https://github.com/zalando-incubator/paradox-nakadi-consumer.git'
+                  url 'https://github.com/zalando-incubator/paradox-nakadi-consumer'
+                }
+
+                licenses {
+                  license {
+                    name 'The MIT License (MIT)'
+                    url 'https://opensource.org/licenses/MIT'
+                  }
+                }
+
+                developers {
+                  developer {
+                    id 'mbudzyn'
+                    name 'Michal Budzyn'
+                    email 'michal.budzyn.extern@zalando.de'
+                  }
+                  developer {
+                    id 'gyao'
+                    name 'Gary Yao'
+                    email 'gary.yao@zalando.de'
+                  }
+                }
+              }
+            }
+        }
+    }
+}
+
+project(":paradox-nakadi-consumer-core") {
+    description = "Paradox Nakaid Consumer Core"
+
+    dependencies {
+        compile 'org.json:json:20160212'
+        compile 'io.reactivex:rxjava:1.1.6'
+        compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
+        compile 'com.squareup.okhttp3:okhttp:3.3.1'
+        compile "org.apache.httpcomponents:httpclient:${httpClientVersion}"
+        compile "org.slf4j:slf4j-api:${slf4jVersion}"
+        compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+        compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jacksonVersion}"
+        compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jacksonVersion}"
+        compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
+        testCompile("com.github.tomakehurst:wiremock:1.57")
+        testCompile("commons-io:commons-io:2.5")
+    }
+}
+
+project(":paradox-nakadi-consumer-partitioned-zk") {
+    description = "Paradox Nakaid Consumer Partition Management with Zookeeper"
+
+    dependencies {
+        compile(project(":paradox-nakadi-consumer-core"))
+        compile "org.apache.curator:curator-framework:${curatorVersion}"
+        compile "org.apache.curator:curator-recipes:${curatorVersion}"
+        testCompile "org.apache.curator:curator-test:${curatorVersion}"
+    }
+}
+
+project(":paradox-nakadi-consumer-boot") {
+    description = "Paradox Nakaid Consumer Spring Boot"
+
+    dependencies {
+        compile(project(":paradox-nakadi-consumer-core"))
+        compile(project(":paradox-nakadi-consumer-partitioned-zk"))
+        compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}") {
+            exclude module: 'spring-boot-starter-logging'
+            exclude module: 'logback-classic'
+            exclude module: 'log4j-over-slf4j'
+        }
+        compile("org.zalando.stups:spring-boot-zalando-stups-tokens:0.9.11")
+        compile("org.zalando.stups:stups-spring-oauth2-client:1.0.9")
+        testCompile("org.springframework.boot:spring-boot-starter-test:${springBootVersion}")
+
+        runtime("org.apache.httpcomponents:httpclient:${httpClientVersion}")
+    }
+}
+
+project(":paradox-nakadi-consumer-example-boot") {
+    description = "Paradox Nakaid Consumer Spring Boot Example "
+
+    dependencies {
+        compile(project(":paradox-nakadi-consumer-core"))
+        compile(project(":paradox-nakadi-consumer-partitioned-zk"))
+        compile(project(":paradox-nakadi-consumer-boot"))
+
+        compile("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        compile("org.springframework.boot:spring-boot-starter-log4j:${springBootVersion}")
+        testCompile("org.springframework.boot:spring-boot-starter-test:${springBootVersion}")
+    }
+
+    apply plugin: 'spring-boot'
+
+    springBoot.backupSource = false
+    bootRepackage {
+        withJarTask jar
+        mainClass 'de.zalando.paradox.nakadi.consumer.example.boot.Application'
+    }
+}
+
+subprojects {
+    task listAllDependencies(type: DependencyReportTask) {}
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.allTasks.any { it instanceof Sign }) {
+        Console console = System.console()
+        console.printf "\n\nWe have to sign some things in this build." +
+                       "\n\nPlease enter your signing details.\n\n"
+
+        def id = console.readLine("PGP Key Id: ")
+        def file = console.readLine("PGP Secret Key Ring File (absolute path): ")
+        def password = console.readPassword("PGP Private Key Password: ")
+
+        allprojects { ext."signing.keyId" = id }
+        allprojects { ext."signing.secretKeyRingFile" = file }
+        allprojects { ext."signing.password" = password }
+
+        console.printf "\nThanks.\n\n"
+    }
+}

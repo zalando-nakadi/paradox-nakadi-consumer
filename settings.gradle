@@ -1,0 +1,6 @@
+rootProject.name = 'paradox-nakadi-consumer'
+
+include 'paradox-nakadi-consumer-core'
+include 'paradox-nakadi-consumer-partitioned-zk'
+include 'paradox-nakadi-consumer-boot'
+include 'paradox-nakadi-consumer-example-boot'

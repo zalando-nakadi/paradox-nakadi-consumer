@@ -1,0 +1,21 @@
+logging:
+  level:
+    ROOT: INFO
+
+server:
+  port: 8082
+
+paradox:
+  nakadi:
+    consumer:
+      nakadiUrl: http://localhost:8080
+      partitionCoordinatorProvider: simple
+
+tokens:
+  enableMock: true
+  startAfterCreation: true
+  accessTokenUri: https://token.example.com
+
+  token-configuration-list:
+    - tokenId:  nakadi-event-stream-read
+      scopes: nakadi.event_stream.read
