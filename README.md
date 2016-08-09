@@ -27,11 +27,13 @@ Java high level [Nakadi](https://github.com/zalando/nakadi) consumer.
     └── README.md
 
 
-### Build the project and deploy to Nexus
+### Build the project and install locally
 
     gradlew clean
     gradlew build
-    gradlew uploadArchives -Dorg.gradle.project.nexusUsername=<your-user> -Dorg.gradle.project.nexusPassword=<your-password>
+
+
+    gradlew install
 
 
 ## Usage
