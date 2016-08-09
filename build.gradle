@@ -126,6 +126,9 @@ subprojects {
     uploadArchives {
         repositories {
             mavenDeployer {
+                def ossrhUsername = project.hasProperty('ossrhUsername')?project.ossrhUsername:''
+                def ossrhPassword = project.hasProperty('ossrhPassword')?project.ossrhPassword:''
+
                 beforeDeployment {
                     MavenDeployment deployment -> if (project.hasProperty("sign")) { signing.signPom(deployment) }
                 }
