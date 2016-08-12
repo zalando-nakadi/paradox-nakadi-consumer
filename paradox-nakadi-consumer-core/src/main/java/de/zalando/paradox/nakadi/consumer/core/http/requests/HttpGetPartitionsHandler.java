@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.google.common.base.Preconditions;
 
@@ -90,7 +91,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
     public void onResponse(final String content) {
         log.trace("ResultCallback [{}]", content);
 
-        final Optional<List<NakadiPartition>> nakadiPartitions = getPartitions(content);
+        final Optional<List<NakadiPartition>> nakadiPartitions = getPartitions(content, config.getObjectMapper(), log);
         if (nakadiPartitions.isPresent()) {
             final EventTypePartitions consumerPartitions = EventTypePartitions.of(eventType,
                     partitionReceiver.keySet());
@@ -98,9 +99,10 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
         }
     }
 
-    private Optional<List<NakadiPartition>> getPartitions(final String content) {
+    public static Optional<List<NakadiPartition>> getPartitions(final String content, final ObjectMapper objectMapper,
+            final Logger log) {
         try {
-            return Optional.of(config.getObjectMapper().<List<NakadiPartition>>readValue(content,
+            return Optional.of(objectMapper.<List<NakadiPartition>>readValue(content,
                         new TypeReference<ArrayList<NakadiPartition>>() { }));
         } catch (IOException e) {
             log.error("Error while parsing partition information", e);
@@ -111,19 +113,19 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
     @Override
     public void onPartitionsAssigned(final Collection<EventTypeCursor> cursors) {
         log.trace("onPartitionsAssigned [{}]", cursors);
-        cursors.stream().forEach(this::startReceiver);
+        cursors.forEach(this::startReceiver);
     }
 
     @Override
     public void onPartitionsRevoked(final Collection<EventTypePartition> partitions) {
         log.trace("onPartitionsRevoked [{}]", partitions);
-        partitions.stream().forEach(this::stopReceiver);
+        partitions.forEach(this::stopReceiver);
     }
 
     @Override
     public void onPartitionsHealthCheck() {
         log.trace("onPartitionsHealthCheck");
-        partitionReceiver.entrySet().stream().forEach(entry -> {
+        partitionReceiver.entrySet().forEach(entry -> {
             final HttpReactiveReceiver receiver = entry.getValue();
             if (receiver.isRunning() && !receiver.isSubscribed()) {
 

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
+import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
 
 class ZKConsumerOffset {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZKConsumerOffset.class);
@@ -32,6 +33,11 @@ class ZKConsumerOffset {
         return getOffset(path);
     }
 
+    public String getOffset(final EventTypePartition eventTypePartition) throws Exception {
+        final String path = getOffsetPath(eventTypePartition.getName(), eventTypePartition.getPartition());
+        return getOffset(path);
+    }
+
     public void setOffset(final EventTypeCursor cursor) throws Exception {
         final String path = getOffsetPath(cursor.getName(), cursor.getPartition());
         setOffset(path, cursor.getOffset());
@@ -46,6 +52,11 @@ class ZKConsumerOffset {
             curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
             curator.setData().forPath(path, offset.getBytes("UTF-8"));
         }
+    }
+
+    void delOffset(final EventTypePartition eventTypePartition) throws Exception {
+        final String path = getOffsetPath(eventTypePartition.getName(), eventTypePartition.getPartition());
+        delOffset(path);
     }
 
     void delOffset(final String path) throws Exception {
