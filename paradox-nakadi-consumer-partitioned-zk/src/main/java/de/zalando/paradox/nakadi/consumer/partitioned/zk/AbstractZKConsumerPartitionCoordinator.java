@@ -1,7 +1,9 @@
 package de.zalando.paradox.nakadi.consumer.partitioned.zk;
 
+import java.util.Optional;
 import java.util.function.Function;
 
+import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionAdminService;
 import org.slf4j.Logger;
 
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
@@ -17,14 +19,16 @@ abstract class AbstractZKConsumerPartitionCoordinator extends AbstractPartitionC
     private boolean startNewestAvailableOffset = true;
 
     private final String consumerName;
-    private PartitionOffsetManagement offsetManagement;
-    private ZKConsumerOffset consumerOffset;
+    private final PartitionOffsetManagement offsetManagement;
+    private final ZKConsumerOffset consumerOffset;
+    private final ZKAdminService adminService;
 
     AbstractZKConsumerPartitionCoordinator(final Logger log, final ZKHolder zkHolder, final String consumerName) {
         super(log);
         this.consumerName = consumerName;
         this.consumerOffset = new ZKConsumerOffset(zkHolder, consumerName);
         this.offsetManagement = new ZKConsumerSyncOffsetManagement(this.consumerOffset, this, this);
+        this.adminService = new ZKAdminService(zkHolder);
     }
 
     @Override
@@ -134,5 +138,10 @@ abstract class AbstractZKConsumerPartitionCoordinator extends AbstractPartitionC
 
     public String getConsumerName() {
         return consumerName;
+    }
+
+    @Override
+    public Optional<PartitionAdminService> getAdminService() {
+        return Optional.of(adminService);
     }
 }

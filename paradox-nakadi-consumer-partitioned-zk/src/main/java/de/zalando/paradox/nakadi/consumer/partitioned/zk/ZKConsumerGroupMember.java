@@ -57,7 +57,11 @@ class ZKConsumerGroupMember {
                 member.toByteJson(), newListener(eventType, listener));
     }
 
-    private String getConsumerGroupPath(final String name) {
+    String getConsumerGroupPath(final String name) {
         return format(CONSUMER_GROUP, name, consumerName);
+    }
+
+    ZKMember getMember() {
+        return member;
     }
 }

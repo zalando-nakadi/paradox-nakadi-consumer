@@ -1,6 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.core.partitioned;
 
 import java.util.Collection;
+import java.util.Optional;
 
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
@@ -23,4 +24,6 @@ public interface PartitionCoordinator extends PartitionOffsetManagement {
     default void close() { }
 
     default void finished(final EventTypePartition eventTypePartition) {}
+
+    default Optional<PartitionAdminService> getAdminService() { return Optional.empty(); }
 }
