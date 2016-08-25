@@ -42,7 +42,7 @@ Java high level [Nakadi](https://github.com/zalando/nakadi) consumer.
 
 ```xml
 <dependency>
-    <groupId>de.zalando.paradox</groupId>
+    <groupId>org.zalando.paradox</groupId>
     <artifactId>paradox-nakadi-consumer-boot</artifactId>
     <version>see above</version>
 </dependency>
