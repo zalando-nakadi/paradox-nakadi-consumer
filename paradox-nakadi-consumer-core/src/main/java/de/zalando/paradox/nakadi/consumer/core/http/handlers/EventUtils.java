@@ -25,12 +25,13 @@ import de.zalando.paradox.nakadi.consumer.core.domain.NakadiCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiEventBatch;
 import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 
-class EventUtils {
+public class EventUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventUtils.class);
 
     private EventUtils() { }
 
-    static Optional<NakadiEventBatch<String>> getRawEventBatch(final ObjectMapper jsonMapper, final String string) {
+    public static Optional<NakadiEventBatch<String>> getRawEventBatch(final ObjectMapper jsonMapper,
+            final String string) {
         try {
             final EventReader reader = new EventReader(jsonMapper, string).invoke();
             final JsonNode eventsNode = reader.getEventsNode();
@@ -67,7 +68,8 @@ class EventUtils {
         }
     }
 
-    static Optional<NakadiEventBatch<JsonNode>> getJsonEventBatch(final ObjectMapper jsonMapper, final String string) {
+    public static Optional<NakadiEventBatch<JsonNode>> getJsonEventBatch(final ObjectMapper jsonMapper,
+            final String string) {
         try {
             final EventReader reader = new EventReader(jsonMapper, string).invoke();
             final JsonNode eventsNode = reader.getEventsNode();

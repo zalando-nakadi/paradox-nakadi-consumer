@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.google.common.base.Preconditions;
 
@@ -91,7 +90,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
     public void onResponse(final String content) {
         log.trace("ResultCallback [{}]", content);
 
-        final Optional<List<NakadiPartition>> nakadiPartitions = getPartitions(content, config.getObjectMapper(), log);
+        final Optional<List<NakadiPartition>> nakadiPartitions = getPartitions(content);
         if (nakadiPartitions.isPresent()) {
             final EventTypePartitions consumerPartitions = EventTypePartitions.of(eventType,
                     partitionReceiver.keySet());
@@ -99,10 +98,9 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
         }
     }
 
-    public static Optional<List<NakadiPartition>> getPartitions(final String content, final ObjectMapper objectMapper,
-            final Logger log) {
+    private Optional<List<NakadiPartition>> getPartitions(final String content) {
         try {
-            return Optional.of(objectMapper.<List<NakadiPartition>>readValue(content,
+            return Optional.of(config.getObjectMapper().<List<NakadiPartition>>readValue(content,
                         new TypeReference<ArrayList<NakadiPartition>>() { }));
         } catch (IOException e) {
             log.error("Error while parsing partition information", e);

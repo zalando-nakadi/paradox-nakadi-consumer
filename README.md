@@ -385,3 +385,42 @@ is suppressed and logged only . If required, a method implementor should take ca
 If Zookeeper Partition Coordinator is used, `java.lang.Error` and any subclass of
 `de.zalando.paradox.nakadi.consumer.core.exceptions.UnrecoverableException` will disconnect the the topic-partition processor
 from the Nakadi server and resume from the last committed offset.
+
+### Spring boot support endpoints
+
+#### Stop and restart event receivers
+
+```sh
+curl -XPOST http://host:port/nakadi/event-receivers/stop   
+curl -XPOST http://host:port/nakadi/event-receivers/restart
+```
+
+#### Replay and restore events
+1. Get current event consumer handlers
+  
+    ```sh
+        curl -X GET 'http://host:port/nakadi/event-handlers'
+    ```    
+    
+2. Replay event from Nakadi
+    * all consumer handlers receiving `order.ORDER_RECEIVED`
+    
+    ```sh
+        curl -X POST 'http://host:port/nakadi/event-handlers/event_types/order.ORDER_RECEIVED/partitions/0/offsets/0/replays'
+    ``` 
+    
+    * consumer `test-raw-event-consumer` receiving `order.ORDER_RECEIVED`
+    
+    ```sh
+        curl -X POST 'http://host:port/nakadi/event-handlers/event_type/order.ORDER_RECEIVED/partitions/0/offsets/0/replays?consumer_name=test-raw-event-consumer&verbose=true'
+    ``` 
+
+3. Restore events from file
+
+
+    ```sh
+       curl --data-binary @0-16516140.json -H "Content-Type: application/json" -X POST 'http://localhost:8082/nakadi/event-handlers/event_types/order.ORDER_RECEIVED/partitions/0/restores'
+    ```    
+
+
+
