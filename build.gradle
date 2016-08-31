@@ -164,7 +164,7 @@ subprojects {
                         developer {
                             id 'mbudzyn'
                             name 'Michal Budzyn'
-                            email 'michal.budzyn.extern@zalando.de'
+                            email 'michalbudzyn@gmail.com'
                         }
                         developer {
                             id 'gyao'
