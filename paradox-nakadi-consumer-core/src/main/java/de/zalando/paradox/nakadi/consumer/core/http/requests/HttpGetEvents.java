@@ -1,20 +1,22 @@
 package de.zalando.paradox.nakadi.consumer.core.http.requests;
 
-import de.zalando.paradox.nakadi.consumer.core.EventStreamConfig;
-import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
-import de.zalando.paradox.nakadi.consumer.core.http.HttpGetRequest;
-import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
-import org.apache.http.client.utils.URIBuilder;
+import static java.lang.String.format;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+
 import java.util.Collections;
 import java.util.Map;
 
-import static java.lang.String.format;
+import org.apache.http.client.utils.URIBuilder;
 
-class HttpGetEvents implements HttpGetRequest {
+import de.zalando.paradox.nakadi.consumer.core.EventStreamConfig;
+import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
+import de.zalando.paradox.nakadi.consumer.core.http.HttpGetRequest;
+import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
+
+public class HttpGetEvents implements HttpGetRequest {
 
     private static final String HEADER_NAKADI_CURSORS = "X-Nakadi-Cursors";
     private static final String PARTITION_CURSOR = "[{\"partition\":\"%s\", \"offset\":\"%s\"}]";
@@ -34,12 +36,13 @@ class HttpGetEvents implements HttpGetRequest {
     // BEGIN , 0 , 1, ...
     private volatile String offset;
 
-    public HttpGetEvents(final String baseUrl, final EventTypeCursor cursor, final EventStreamConfig eventStreamConfig) {
+    public HttpGetEvents(final String baseUrl, final EventTypeCursor cursor,
+            final EventStreamConfig eventStreamConfig) {
         this(baseUrl, cursor.getName(), cursor.getPartition(), cursor.getOffset(), eventStreamConfig);
     }
 
     public HttpGetEvents(final String baseUrl, final String eventType, final String partition, final String offset,
-                         final EventStreamConfig eventStreamConfig) {
+            final EventStreamConfig eventStreamConfig) {
         this.baseUrl = baseUrl;
         this.eventType = eventType;
         this.partition = partition;
@@ -71,19 +74,25 @@ class HttpGetEvents implements HttpGetRequest {
             if (null != eventStreamConfig.getStreamTimeoutSeconds()) {
                 builder.addParameter(PARAM_STREAM_TIMEOUT, eventStreamConfig.getStreamTimeoutSeconds().toString());
             }
+
             if (null != eventStreamConfig.getStreamKeepAliveLimit()) {
-                builder.addParameter(PARAM_STREAM_KEEP_ALIVE_LIMIT, eventStreamConfig.getStreamKeepAliveLimit().toString());
+                builder.addParameter(PARAM_STREAM_KEEP_ALIVE_LIMIT,
+                    eventStreamConfig.getStreamKeepAliveLimit().toString());
             }
+
             if (null != eventStreamConfig.getBatchLimit()) {
                 builder.addParameter(PARAM_BATCH_LIMIT, eventStreamConfig.getBatchLimit().toString());
             }
+
             if (null != eventStreamConfig.getBatchTimeoutSeconds()) {
                 builder.addParameter(PARAM_BATCH_FLUSH_TIMEOUT, eventStreamConfig.getBatchTimeoutSeconds().toString());
             }
+
             if (null != eventStreamConfig.getStreamLimit()) {
                 builder.addParameter(PARAM_STREAM_LIMIT, eventStreamConfig.getStreamLimit().toString());
             }
         }
+
         return builder;
     }
 

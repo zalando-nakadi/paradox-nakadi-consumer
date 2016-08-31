@@ -7,7 +7,9 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.io.IOException;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,9 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
 
 import de.zalando.paradox.nakadi.consumer.boot.EventReceiverRegistryConfiguration;
 import de.zalando.paradox.nakadi.consumer.core.AuthorizationValueProvider;
@@ -49,6 +48,7 @@ public class EventReceiverRegistry {
     private final AtomicBoolean running = new AtomicBoolean(true);
 
     private final ConcurrentMap<EventTypeConsumer, HttpReactiveReceiver> receiverMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<EventTypeConsumer, EventHandler<?>> handlerMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<Pair<String, String>, PartitionCoordinator> coordinatorMap = new ConcurrentHashMap<>();
 
     private final EventReceiverRegistryConfiguration config;
@@ -137,6 +137,7 @@ public class EventReceiverRegistry {
         final ConsumerConfig config = withEventHandler(builder, handler).build();
         final HttpReactiveReceiver receiver = new HttpReactiveReceiver(new HttpGetPartitionsHandler(config));
         checkState(null == receiverMap.putIfAbsent(etc, receiver), "Duplicated configuration for [%s]", etc);
+        handlerMap.putIfAbsent(etc, handler);
 
         LOGGER.info("Starting receiver for consumerName [{}] for event type [{}]", consumerName, config.getEventType());
         receiver.init();
@@ -249,38 +250,11 @@ public class EventReceiverRegistry {
         }
     }
 
-    private static class EventTypeConsumer {
-        private final String eventName;
-        private final String consumerName;
+    public Set<EventTypeConsumer> getEventTypeConsumers() {
+        return Collections.unmodifiableSet(handlerMap.keySet());
+    }
 
-        public EventTypeConsumer(final String eventType, final String consumerName) {
-            this.eventName = eventType;
-            this.consumerName = consumerName;
-        }
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this).add("eventName", eventName).add("consumerName", consumerName)
-                              .toString();
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
-
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            EventTypeConsumer that = (EventTypeConsumer) o;
-            return Objects.equal(eventName, that.eventName) && Objects.equal(consumerName, that.consumerName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(eventName, consumerName);
-        }
+    public EventHandler<?> getEventTypeConsumerHandler(final EventTypeConsumer eventTypeConsumer) {
+        return handlerMap.get(eventTypeConsumer);
     }
 }

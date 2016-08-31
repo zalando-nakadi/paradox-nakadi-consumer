@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiEventBatch;
 
-interface EventClassProvider<T> {
+public interface EventClassProvider<T> {
     Class<T> getEventClass();
 
     static JavaType getJavaType(final EventClassProvider delegate, final ObjectMapper jsonMapper) {
