@@ -34,9 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -73,9 +71,9 @@ public class NakadiConsumerConfiguration {
             if (null == nakadiHandler) {
                 nakadiHandler = AnnotationUtils.findAnnotation(beanType, NakadiHandler.class);
             }
-            final SetMultimap<String, String> consumerEvents = LinkedHashMultimap.create();
+            final SetMultimap<String, String> consumerToEvents = LinkedHashMultimap.create();
             if (null != nakadiHandler) {
-                addConsumerEvent(consumerEvents, nakadiHandler.eventName(), nakadiHandler.consumerName(), nakadiHandler.consumerNamePostfix());
+                addEventToConsumer(consumerToEvents, nakadiHandler.eventName(), nakadiHandler.consumerName(), nakadiHandler.consumerNamePostfix());
             }
             if (NakadiEventHandler.class.isAssignableFrom(beanType)) {
                 final Object bean = applicationContext.getBean(beanName);
@@ -86,11 +84,11 @@ public class NakadiConsumerConfiguration {
                 if (null == beanEventConsumers || beanEventConsumers.isEmpty()) {
                     LOGGER.info("Empty Nakadi event consumers provided by [{} / {}]", beanName, beanType);
                 } else {
-                    beanEventConsumers.forEach(element -> addConsumerEvent(
-                            consumerEvents, element.getEventName(), element.getConsumerName(), false));
+                    beanEventConsumers.forEach(element -> addEventToConsumer(
+                            consumerToEvents, element.getEventName(), element.getConsumerName(), false));
                 }
             }
-            return consumerEvents.entries().stream().map( element -> new ConsumerEventConfig(
+            return consumerToEvents.entries().stream().map( element -> new ConsumerEventConfig(
                             element.getKey(), element.getValue(), entry.getValue())).
                     collect(Collectors.toList());
             //J+
@@ -98,8 +96,8 @@ public class NakadiConsumerConfiguration {
         return new ConsumerEventConfigList(list);
     }
 
-    private void addConsumerEvent(final SetMultimap<String, String> consumerEvents, final String eventName, final String consumerName,
-                                  final boolean consumerNamePostfix) {
+    private void addEventToConsumer(final SetMultimap<String, String> consumerToEvents, final String eventName, final String consumerName,
+                                    final boolean consumerNamePostfix) {
         checkArgument(isNotEmpty(eventName), "eventName must not be empty");
 
         final String eventConsumerName;
@@ -111,7 +109,7 @@ public class NakadiConsumerConfiguration {
             eventConsumerName = isNotEmpty(consumerName) ? consumerName : nakadiConsumerProperties.getDefaultConsumerName();
         }
         checkArgument(isNotEmpty(eventConsumerName), "consumerName must not be empty");
-        consumerEvents.put(eventConsumerName, eventName);
+        consumerToEvents.put(eventConsumerName, eventName);
     }
 
     @Bean
