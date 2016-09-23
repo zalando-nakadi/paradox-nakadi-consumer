@@ -61,7 +61,6 @@ public class NakadiConsumerConfiguration {
     public ConsumerEventConfigList consumerEventConfigList() {
 
         final Map<String, EventHandler> handlers = applicationContext.getBeansOfType(EventHandler.class);
-        Function<? super List<ConsumerEventConfig>, ? extends Stream<?>> f;
         final List<ConsumerEventConfig> list = handlers.entrySet().stream().map(entry -> {
             //J-
             NakadiHandler nakadiHandler = null;
