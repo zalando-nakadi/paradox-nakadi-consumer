@@ -59,11 +59,11 @@ public class NakadiConsumerConfiguration {
     public ConsumerEventConfigList consumerEventConfigList() {
 
         final Map<String, EventHandler> handlers = applicationContext.getBeansOfType(EventHandler.class);
-        final List<ConsumerEventConfig> list = handlers.entrySet().stream().map(entry -> {
+        final List<ConsumerEventConfig> list = handlers.entrySet().stream().map(beanNameHandlerEntry -> {
             //J-
             NakadiHandler nakadiHandler = null;
-            final Class<?> beanType = entry.getValue().getClass();
-            final String beanName = entry.getKey();
+            final Class<?> beanType = beanNameHandlerEntry.getValue().getClass();
+            final String beanName = beanNameHandlerEntry.getKey();
             final Method method = ReflectionUtils.findMethod(beanType, "onEvent", EventTypeCursor.class, Object.class);
             if (null != method) {
                 nakadiHandler = AnnotationUtils.findAnnotation(method, NakadiHandler.class);
@@ -88,8 +88,8 @@ public class NakadiConsumerConfiguration {
                             consumerToEvents, eventConsumer.getEventName(), eventConsumer.getConsumerName(), false));
                 }
             }
-            return consumerToEvents.entries().stream().map( element -> new ConsumerEventConfig(
-                            element.getKey(), element.getValue(), entry.getValue())).
+            return consumerToEvents.entries().stream().map(consumerEventEntry -> new ConsumerEventConfig(
+                            consumerEventEntry.getKey(), consumerEventEntry.getValue(), beanNameHandlerEntry.getValue())).
                     collect(Collectors.toList());
             //J+
         }).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toList());
