@@ -143,7 +143,7 @@ public class EventReceiverRegistry {
         receiver.init();
     }
 
-    private ConsumerConfig.Builder withEventHandler(final ConsumerConfig.Builder builder,
+    private static ConsumerConfig.Builder withEventHandler(final ConsumerConfig.Builder builder,
             final EventHandler<?> handler) {
 
         // only one interface must be implemented
