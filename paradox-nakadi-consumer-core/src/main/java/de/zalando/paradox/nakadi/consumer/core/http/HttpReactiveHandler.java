@@ -12,7 +12,7 @@ public interface HttpReactiveHandler {
 
     Logger getLogger(Class<?> clazz);
 
-    void onResponse(final String content);
+    void onResponse(String content);
 
     void onErrorResponse(int statusCode, String content);
 
