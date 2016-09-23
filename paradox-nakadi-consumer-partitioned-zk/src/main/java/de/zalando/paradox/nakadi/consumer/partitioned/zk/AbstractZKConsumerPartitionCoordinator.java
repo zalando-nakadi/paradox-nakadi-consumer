@@ -3,13 +3,13 @@ package de.zalando.paradox.nakadi.consumer.partitioned.zk;
 import java.util.Optional;
 import java.util.function.Function;
 
-import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionAdminService;
 import org.slf4j.Logger;
 
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiPartition;
+import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionAdminService;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionOffsetManagement;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.impl.AbstractPartitionCoordinator;
 import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
@@ -94,9 +94,9 @@ abstract class AbstractZKConsumerPartitionCoordinator extends AbstractPartitionC
                 return result;
             }
 
-            long oldsetValue = Long.MIN_VALUE;
+            long oldestValue = Long.MIN_VALUE;
             try {
-                oldsetValue = Long.parseLong(nakadiPartition.getOldestAvailableOffset());
+                oldestValue = Long.parseLong(nakadiPartition.getOldestAvailableOffset());
             } catch (NumberFormatException ignore) {
 
                 // ok when the value is BEGIN
@@ -105,21 +105,21 @@ abstract class AbstractZKConsumerPartitionCoordinator extends AbstractPartitionC
             }
 
             // [[{"oldest_available_offset":"1522","newest_available_offset":"1521","partition":"0"}]]
-            if (oldsetValue > newestValue) {
+            if (oldestValue > newestValue) {
 
                 // messages purged due to retention time
-                log.warn("Oldest offset [{}] greater than newest offset [{}]", oldsetValue, newestValue);
-                oldsetValue = newestValue;
+                log.warn("Oldest offset [{}] greater than newest offset [{}]", oldestValue, newestValue);
+                oldestValue = newestValue;
             }
 
             final long offset;
-            if (oldsetValue > offsetValue) {
+            if (oldestValue > offsetValue) {
                 log.error("Inconsistent ZK data for [{}]. ZK offset [{}] is less than Nakadi oldest offset [{}]", path,
-                    offsetValue, oldsetValue);
-                offset = oldsetValue;
+                    offsetValue, oldestValue);
+                offset = oldestValue;
             } else if (offsetValue > newestValue) {
                 log.error("Inconsistent ZK data for [{}]. ZK offset [{}] is greater than Nakadi newest offset [{}]",
-                    path, offsetValue, oldsetValue);
+                    path, offsetValue, oldestValue);
                 offset = newestValue;
             } else {
                 offset = offsetValue;
