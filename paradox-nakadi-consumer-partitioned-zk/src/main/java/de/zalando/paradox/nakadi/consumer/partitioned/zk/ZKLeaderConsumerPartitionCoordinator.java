@@ -39,10 +39,8 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
             (eventType, nakadiPartitionsToAssign, nakadiPartitionsToRevoke) -> {
             if (running.get()) {
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Rebalance [{}], assign [{}], revoke [{}]", eventType.getName(),
-                        getPartitions(nakadiPartitionsToAssign), getPartitions(nakadiPartitionsToRevoke));
-                }
+                log.debug("Rebalance [{}], assign [{}], revoke [{}]", eventType.getName(),
+                    getPartitions(nakadiPartitionsToAssign), getPartitions(nakadiPartitionsToRevoke));
 
                 nakadiPartitionsToRevoke.forEach(nakadiPartitionToRevoke -> {
                     try {
