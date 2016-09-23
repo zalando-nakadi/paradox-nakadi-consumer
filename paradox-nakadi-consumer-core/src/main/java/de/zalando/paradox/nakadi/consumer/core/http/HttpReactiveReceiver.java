@@ -65,12 +65,12 @@ public class HttpReactiveReceiver implements Closeable {
         responses = handleSubscription(responses);
         responses = handleRestart(responses);
 
-        final Action1<Throwable> error = t ->
+        final Action1<Throwable> onError = t ->
                 log.error("Subscription handler error [{}] / [{}] ", t.getClass().getName(), getMessage(t), t);
 
-        final Action0 compete = () -> log.info("Subscription handler completed");
+        final Action0 onCompleted = () -> log.info("Subscription handler completed");
 
-        subscription = responses.subscribe(getAction(), error, compete);
+        subscription = responses.subscribe(getAction(), onError, onCompleted);
     }
 
     private <T> Observable<T> handleSubscription(final Observable<T> observable) {
