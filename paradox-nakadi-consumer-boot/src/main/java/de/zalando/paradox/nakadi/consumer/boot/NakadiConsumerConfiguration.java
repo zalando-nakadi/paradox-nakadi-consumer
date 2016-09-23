@@ -32,7 +32,6 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -92,7 +91,7 @@ public class NakadiConsumerConfiguration {
                             consumerEventEntry.getKey(), consumerEventEntry.getValue(), beanNameHandlerEntry.getValue())).
                     collect(Collectors.toList());
             //J+
-        }).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toList());
+        }).flatMap(Collection::stream).collect(Collectors.toList());
         return new ConsumerEventConfigList(list);
     }
 
