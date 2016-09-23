@@ -84,8 +84,8 @@ public class NakadiConsumerConfiguration {
                 if (null == beanEventConsumers || beanEventConsumers.isEmpty()) {
                     LOGGER.info("Empty Nakadi event consumers provided by [{} / {}]", beanName, beanType);
                 } else {
-                    beanEventConsumers.forEach(element -> addEventToConsumer(
-                            consumerToEvents, element.getEventName(), element.getConsumerName(), false));
+                    beanEventConsumers.forEach(eventConsumer -> addEventToConsumer(
+                            consumerToEvents, eventConsumer.getEventName(), eventConsumer.getConsumerName(), false));
                 }
             }
             return consumerToEvents.entries().stream().map( element -> new ConsumerEventConfig(
