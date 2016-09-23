@@ -32,20 +32,20 @@ public class HttpReactiveReceiver implements Closeable {
 
     private Subscription subscription;
 
-    private final HttpReactiveHandler eventHandler;
+    private final HttpReactiveHandler httpReactiveHandler;
 
     private final Scheduler scheduler;
 
-    public HttpReactiveReceiver(final HttpReactiveHandler eventHandler) {
-        this.eventHandler = eventHandler;
-        this.log = eventHandler.getLogger(this.getClass());
+    public HttpReactiveReceiver(final HttpReactiveHandler httpReactiveHandler) {
+        this.httpReactiveHandler = httpReactiveHandler;
+        this.log = httpReactiveHandler.getLogger(this.getClass());
         this.scheduler = Schedulers.io();
     }
 
     @VisibleForTesting
-    HttpReactiveReceiver(final HttpReactiveHandler eventHandler, final Scheduler scheduler) {
-        this.eventHandler = eventHandler;
-        this.log = eventHandler.getLogger(this.getClass());
+    HttpReactiveReceiver(final HttpReactiveHandler httpReactiveHandler, final Scheduler scheduler) {
+        this.httpReactiveHandler = httpReactiveHandler;
+        this.log = httpReactiveHandler.getLogger(this.getClass());
         this.scheduler = scheduler;
     }
 
@@ -57,9 +57,9 @@ public class HttpReactiveReceiver implements Closeable {
             return;
         }
 
-        eventHandler.init();
+        httpReactiveHandler.init();
 
-        Observable<HttpResponseChunk> responses = eventHandler.createRequest();
+        Observable<HttpResponseChunk> responses = httpReactiveHandler.createRequest();
         responses = responses.subscribeOn(scheduler);
         responses = responses.unsubscribeOn(scheduler);
         responses = handleSubscription(responses);
@@ -76,10 +76,10 @@ public class HttpReactiveReceiver implements Closeable {
     private <T> Observable<T> handleSubscription(final Observable<T> observable) {
         return observable.doOnSubscribe(() -> {
                              log.debug("Handler subscription started");
-                             eventHandler.onStarted();
+                             httpReactiveHandler.onStarted();
                          }).doOnUnsubscribe(() -> {
                              log.debug("Handler subscription finished");
-                             eventHandler.onFinished();
+                             httpReactiveHandler.onFinished();
                          });
     }
 
@@ -100,7 +100,7 @@ public class HttpReactiveReceiver implements Closeable {
                             }
                             return repeatAttempt;
                         }).flatMap(repeatAttempt -> {
-                            final long retryAfterMillis = eventHandler.getRetryAfterMillis();
+                            final long retryAfterMillis = httpReactiveHandler.getRetryAfterMillis();
                             checkArgument(retryAfterMillis > 0, "RetryAfterMillis must be greater than 0");
                             log.debug("Restart after [{}] running [{}] reason [{}] attempt : [{}]", retryAfterMillis,
                                     running.get(), reason, repeatAttempt);
@@ -116,10 +116,10 @@ public class HttpReactiveReceiver implements Closeable {
                 try {
                     if (chunk.getStatusCode() == 200) {
                         log.trace("Chunk response event [{}]", chunk.getContent());
-                        eventHandler.onResponse(chunk.getContent());
+                        httpReactiveHandler.onResponse(chunk.getContent());
                     } else {
                         log.error("Chunk response error [{}] / [{}]", chunk.getStatusCode(), chunk.getContent());
-                        eventHandler.onErrorResponse(chunk.getStatusCode(), chunk.getContent());
+                        httpReactiveHandler.onErrorResponse(chunk.getStatusCode(), chunk.getContent());
                     }
                 } catch (Throwable t) {
                     log.error("Unexpected handler error [{}]", getMessage(t));
@@ -148,7 +148,7 @@ public class HttpReactiveReceiver implements Closeable {
             }
         }
 
-        eventHandler.close();
+        httpReactiveHandler.close();
     }
 
     public boolean isRunning() {
