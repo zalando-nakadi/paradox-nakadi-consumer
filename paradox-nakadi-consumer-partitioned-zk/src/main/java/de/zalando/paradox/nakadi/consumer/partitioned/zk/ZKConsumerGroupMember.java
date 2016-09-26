@@ -44,6 +44,7 @@ class ZKConsumerGroupMember {
                 case CHILD_REMOVED : {
                     final String removedMemberId = ZKPaths.getNodeFromPath(event.getData().getPath());
                     delegate.memberRemoved(eventType, removedMemberId);
+                    break;
                 }
 
                 default :
