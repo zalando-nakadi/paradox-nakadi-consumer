@@ -32,7 +32,8 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
     private final AtomicBoolean running = new AtomicBoolean(true);
 
     private final ZKConsumerPartitionLeader consumerPartitionLeader;
-    private final ConsumerPartitionRebalanceStrategy.ResultCallback rebalancerResult = getResultCallbackHandler();
+    private final ConsumerPartitionRebalanceStrategy.ResultCallback rebalanceResultCallback =
+        getResultCallbackHandler();
 
     private ConsumerPartitionRebalanceStrategy.ResultCallback getResultCallbackHandler() {
         return
@@ -143,7 +144,7 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
             getPartitionsToRevoke(consumerPartitions, nakadiPartitions));
 
         rebalancer.setNakadiPartitions(consumerPartitions.getEventType(), nakadiPartitions);
-        rebalancer.rebalance(consumerPartitions.getEventType(), rebalancerResult);
+        rebalancer.rebalance(consumerPartitions.getEventType(), rebalanceResultCallback);
 
         joinGroup(consumerPartitions.getEventType());
     }
@@ -210,7 +211,7 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
 
             private void onGroupChanged(final EventType eventType) {
                 rebalancer.setCurrentMembers(eventType, getCurrentMembers(eventType));
-                rebalancer.rebalance(eventType, rebalancerResult);
+                rebalancer.rebalance(eventType, rebalanceResultCallback);
             }
         };
     }
