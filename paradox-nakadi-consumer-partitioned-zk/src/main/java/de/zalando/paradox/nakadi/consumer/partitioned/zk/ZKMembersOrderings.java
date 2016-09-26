@@ -9,7 +9,9 @@ import javax.annotation.Nonnull;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 
-public class ZKMembersOrderings {
+public final class ZKMembersOrderings {
+
+    private ZKMembersOrderings() { }
 
     public static final ZKLeaderConsumerPartitionRebalanceStrategy.MembersOrdering MEMBERS_ID_ORDER =
         currentMembers -> {
