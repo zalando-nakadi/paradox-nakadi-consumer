@@ -54,7 +54,7 @@ abstract class ZKConsumerLeader<T> {
 
     public abstract String getLeaderInfoPath(final T t);
 
-    private ConcurrentMap<T, LeaderControl> leaderControls = new ConcurrentHashMap<>();
+    private final ConcurrentMap<T, LeaderControl> leaderControls = new ConcurrentHashMap<>();
 
     private static class LeaderControl {
         private final LeaderSelector selector;
@@ -69,6 +69,12 @@ abstract class ZKConsumerLeader<T> {
             return new LeaderControl(selector);
         }
 
+        /**
+         * This method blocks until leadership is released by calling {@link #relinquishLeadership()}. This is needed to
+         * fulfill the contract of {@link LeaderSelectorListener}.
+         *
+         * @throws  InterruptedException
+         */
         void takeLeadership() throws InterruptedException {
             this.leader = true;
             this.stop.await();
