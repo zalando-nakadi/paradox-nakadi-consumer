@@ -31,27 +31,25 @@ abstract class AbstractEventsResponseHandler<T> extends AbstractResponseHandler 
     @Override
     public void onResponse(final String content) {
         final String[] events = getEvents(content);
-        if (events.length > 0) {
-            for (String event : events) {
-                final Optional<NakadiEventBatch<T>> optionalBatch = getEventBatch(event);
-                if (!optionalBatch.isPresent()) {
-                    return;
-                }
+        for (String event : events) {
+            final Optional<NakadiEventBatch<T>> optionalBatch = getEventBatch(event);
+            if (!optionalBatch.isPresent()) {
+                return;
+            }
 
-                final EventTypeCursor cursor = EventTypeCursor.of(eventTypePartition,
-                        optionalBatch.get().getCursor().getOffset());
+            final EventTypeCursor cursor = EventTypeCursor.of(eventTypePartition,
+                    optionalBatch.get().getCursor().getOffset());
 
-                final List<T> batchEvents = optionalBatch.get().getEvents();
-                if (null != batchEvents && !batchEvents.isEmpty()) {
-                    handleEvents(cursor, batchEvents);
-                } else {
-                    try {
-                        log.info("Keep alive offset [{}]", cursor.getOffset());
-                        coordinator.commit(cursor);
-                    } catch (Throwable t) {
-                        log.error("Handler error at cursor [{}]", cursor);
-                        coordinator.error(t, eventTypePartition);
-                    }
+            final List<T> batchEvents = optionalBatch.get().getEvents();
+            if (null != batchEvents && !batchEvents.isEmpty()) {
+                handleEvents(cursor, batchEvents);
+            } else {
+                try {
+                    log.info("Keep alive offset [{}]", cursor.getOffset());
+                    coordinator.commit(cursor);
+                } catch (Throwable t) {
+                    log.error("Handler error at cursor [{}]", cursor);
+                    coordinator.error(t, eventTypePartition);
                 }
             }
         }
@@ -70,6 +68,14 @@ abstract class AbstractEventsResponseHandler<T> extends AbstractResponseHandler 
         }
     }
 
+    /**
+     * Decreases the cursor as received from Nakadi by n. This is needed because Nakadi returns a cursor that points to
+     * the end of a chunk, i.e., the last delivered event. If n is lower or equals 0, the input cursor is returned. Note
+     * that the special cursor 'BEGIN' cannot be decremented and in this case this method also returns the input cursor.
+     *
+     * @return  A new instance of {@link EventTypeCursor} with an offset decremented by n, or the same instance if the
+     *          offset cannot be decremented.
+     */
     private EventTypeCursor decreaseCursor(final EventTypeCursor cursor, final int n) {
         if (n > 0) {
             try {
