@@ -30,12 +30,14 @@ public abstract class AbstractPartitionCoordinator implements PartitionCoordinat
 
     protected final Logger log;
 
+    private final ConcurrentMap<EventType, PartitionRebalanceListener> rebalanceListeners = new ConcurrentHashMap<>();
+
+    private final ConcurrentMap<EventTypePartition, PartitionCommitCallback> commitCallbacks =
+        new ConcurrentHashMap<>();
+
     protected AbstractPartitionCoordinator(final Logger log) {
         this.log = log;
     }
-
-    private ConcurrentMap<EventType, PartitionRebalanceListener> rebalanceListeners = new ConcurrentHashMap<>();
-    private ConcurrentMap<EventTypePartition, PartitionCommitCallback> commitCallbacks = new ConcurrentHashMap<>();
 
     @Override
     public void registerRebalanceListener(final EventType eventType, final PartitionRebalanceListener listener) {

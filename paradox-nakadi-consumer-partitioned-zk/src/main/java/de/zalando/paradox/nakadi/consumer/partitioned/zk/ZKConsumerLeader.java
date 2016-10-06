@@ -1,17 +1,6 @@
 package de.zalando.paradox.nakadi.consumer.partitioned.zk;
 
-import com.google.common.base.Preconditions;
-import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.leader.CancelLeadershipException;
-import org.apache.curator.framework.recipes.leader.LeaderSelector;
-import org.apache.curator.framework.recipes.leader.LeaderSelectorListener;
-import org.apache.curator.framework.recipes.leader.Participant;
-import org.apache.curator.framework.state.ConnectionState;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -22,7 +11,22 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNull;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.leader.CancelLeadershipException;
+import org.apache.curator.framework.recipes.leader.LeaderSelector;
+import org.apache.curator.framework.recipes.leader.LeaderSelectorListener;
+import org.apache.curator.framework.recipes.leader.Participant;
+import org.apache.curator.framework.state.ConnectionState;
+
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
+
+import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 
 abstract class ZKConsumerLeader<T> {
 
@@ -47,9 +51,10 @@ abstract class ZKConsumerLeader<T> {
     }
 
     public abstract String getLeaderSelectorPath(final T t);
+
     public abstract String getLeaderInfoPath(final T t);
 
-    private ConcurrentMap<T, LeaderControl> leaderControls = new ConcurrentHashMap<>();
+    private final ConcurrentMap<T, LeaderControl> leaderControls = new ConcurrentHashMap<>();
 
     private static class LeaderControl {
         private final LeaderSelector selector;
@@ -64,6 +69,12 @@ abstract class ZKConsumerLeader<T> {
             return new LeaderControl(selector);
         }
 
+        /**
+         * This method blocks until leadership is released by calling {@link #relinquishLeadership()}. This is needed to
+         * fulfill the contract of {@link LeaderSelectorListener}.
+         *
+         * @throws  InterruptedException
+         */
         void takeLeadership() throws InterruptedException {
             this.leader = true;
             this.stop.await();
@@ -102,7 +113,7 @@ abstract class ZKConsumerLeader<T> {
                         try {
                             final LeaderControl leaderControl = leaderControls.get(t);
                             Preconditions.checkState(leaderControl != null && !leaderControl.isLeader(),
-                                    "Leader control for [%s] in incorrect state", t);
+                                "Leader control for [%s] in incorrect state", t);
 
                             // mark in zookeeper / information only
                             setLeaderInfo(getLeaderInfoPath(t), member.getMemberId());
@@ -111,8 +122,7 @@ abstract class ZKConsumerLeader<T> {
                             leaderControl.takeLeadership();
                         } finally {
                             try {
-                                LOGGER.info("Member [{}] relinquished leadership for [{}]",
-                                        member.getMemberId(), t);
+                                LOGGER.info("Member [{}] relinquished leadership for [{}]", member.getMemberId(), t);
                                 leaderControls.remove(t);
                             } finally {
                                 delegate.relinquishLeadership(t, member);
@@ -128,17 +138,16 @@ abstract class ZKConsumerLeader<T> {
                         if (null != leaderControl && leaderControl.isLeader()) {
                             switch (connectionState) {
 
-                                case LOST:
-                                case SUSPENDED:
+                                case LOST :
+                                case SUSPENDED :
                                     leaderControl.relinquishLeadership();
                                     throw new CancelLeadershipException("State " + connectionState + ":" + t);
 
-                                default:
+                                default :
                                     break;
                             }
                         }
                     }
-
 
                 });
         selector.setId(member.getMemberId());
@@ -156,14 +165,11 @@ abstract class ZKConsumerLeader<T> {
         }
     }
 
-    public Map<String, Boolean> getParticipants(final T t){
-        //J-
-        return Optional.ofNullable(leaderControls.get(t))
-                .map((leaderControl) ->
-                        leaderControl.getParticipants().stream().collect(
-                                Collectors.toMap(Participant::getId, Participant::isLeader, (u, v) -> u)))
-                .orElseGet(Collections::emptyMap);
-        //J+
+    public Map<String, Boolean> getParticipants(final T t) {
+        return Optional.ofNullable(leaderControls.get(t)).map((leaderControl) ->
+                               leaderControl.getParticipants().stream().collect(
+                                   Collectors.toMap(Participant::getId, Participant::isLeader, (u, v) -> u))).orElseGet(
+                           Collections::emptyMap);
     }
 
     public void closeGroupLeadership(final T t) {
@@ -174,8 +180,8 @@ abstract class ZKConsumerLeader<T> {
         }
     }
 
-    public void close()  {
-        LOGGER.info("Closing for member [{}]" , member.getMemberId());
+    public void close() {
+        LOGGER.info("Closing for member [{}]", member.getMemberId());
 
         leaderControls.values().forEach(LeaderControl::relinquishLeadership);
 

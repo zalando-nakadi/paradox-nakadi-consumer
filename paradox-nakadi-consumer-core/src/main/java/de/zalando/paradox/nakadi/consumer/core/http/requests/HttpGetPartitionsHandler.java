@@ -40,7 +40,7 @@ import rx.Observable;
 
 public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionRebalanceListener, Closeable {
 
-    private final ConcurrentMap<String, HttpReactiveReceiver> partitionReceiver = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, HttpReactiveReceiver> partitionToReceiver = new ConcurrentHashMap<>();
 
     private final ConsumerConfig config;
     private final Logger log;
@@ -71,7 +71,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
     public void close() {
         if (rebalanceRegistered.compareAndSet(true, false)) {
             try {
-                final List<EventTypePartition> partitions = partitionReceiver.keySet().stream().map(partition ->
+                final List<EventTypePartition> partitions = partitionToReceiver.keySet().stream().map(partition ->
                             EventTypePartition.of(eventType, partition)).collect(Collectors.toList());
                 log.info("Handler close revokes partitions [{}]", partitions);
                 onPartitionsRevoked(partitions);
@@ -93,7 +93,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
         final Optional<List<NakadiPartition>> nakadiPartitions = getPartitions(content);
         if (nakadiPartitions.isPresent()) {
             final EventTypePartitions consumerPartitions = EventTypePartitions.of(eventType,
-                    partitionReceiver.keySet());
+                    partitionToReceiver.keySet());
             coordinator.rebalance(consumerPartitions, nakadiPartitions.get());
         }
     }
@@ -123,7 +123,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
     @Override
     public void onPartitionsHealthCheck() {
         log.trace("onPartitionsHealthCheck");
-        partitionReceiver.entrySet().forEach(entry -> {
+        partitionToReceiver.entrySet().forEach(entry -> {
             final HttpReactiveReceiver receiver = entry.getValue();
             if (receiver.isRunning() && !receiver.isSubscribed()) {
 
@@ -148,7 +148,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
     private HttpReactiveReceiver stopReceiver(final EventTypePartition eventTypePartition) {
         checkEventTypePartition(eventTypePartition);
 
-        HttpReactiveReceiver receiver = partitionReceiver.remove(eventTypePartition.getPartition());
+        HttpReactiveReceiver receiver = partitionToReceiver.remove(eventTypePartition.getPartition());
         if (null != receiver) {
             try {
                 log.info("Stopping receiver for partition [{}]", eventTypePartition);
@@ -166,7 +166,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
         checkEventTypePartition(cursor.getEventTypePartition());
 
         final String partition = cursor.getEventTypePartition().getPartition();
-        HttpReactiveReceiver receiver = partitionReceiver.get(partition);
+        HttpReactiveReceiver receiver = partitionToReceiver.get(partition);
         if (null == receiver) {
             newReceiver(cursor);
         } else if (receiver.isRunning() && !receiver.isSubscribed()) {
@@ -196,7 +196,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
         HttpReactiveReceiver receiver = null;
         try {
             receiver = new HttpReactiveReceiver(new HttpGetEventsHandler(baseUri, cursor, config));
-            if (null == partitionReceiver.putIfAbsent(partition, receiver)) {
+            if (null == partitionToReceiver.putIfAbsent(partition, receiver)) {
                 log.info("Starting receiver for cursor [{}]", cursor);
                 receiver.init();
                 log.info("Receiver started for cursor [{}]", cursor);
@@ -209,7 +209,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
                 } catch (IOException e1) {
                     log.error("Stopping receiver for cursor [{}] failed due to [{}]", cursor, getMessage(e1));
                 } finally {
-                    partitionReceiver.remove(partition);
+                    partitionToReceiver.remove(partition);
                 }
             }
         }

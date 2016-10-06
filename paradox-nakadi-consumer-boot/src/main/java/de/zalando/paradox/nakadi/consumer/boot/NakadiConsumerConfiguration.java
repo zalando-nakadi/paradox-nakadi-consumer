@@ -32,11 +32,8 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -61,12 +58,11 @@ public class NakadiConsumerConfiguration {
     public ConsumerEventConfigList consumerEventConfigList() {
 
         final Map<String, EventHandler> handlers = applicationContext.getBeansOfType(EventHandler.class);
-        Function<? super List<ConsumerEventConfig>, ? extends Stream<?>> f;
-        final List<ConsumerEventConfig> list = handlers.entrySet().stream().map(entry -> {
+        final List<ConsumerEventConfig> list = handlers.entrySet().stream().map(beanNameHandlerEntry -> {
             //J-
             NakadiHandler nakadiHandler = null;
-            final Class<?> beanType = entry.getValue().getClass();
-            final String beanName = entry.getKey();
+            final Class<?> beanType = beanNameHandlerEntry.getValue().getClass();
+            final String beanName = beanNameHandlerEntry.getKey();
             final Method method = ReflectionUtils.findMethod(beanType, "onEvent", EventTypeCursor.class, Object.class);
             if (null != method) {
                 nakadiHandler = AnnotationUtils.findAnnotation(method, NakadiHandler.class);
@@ -74,9 +70,9 @@ public class NakadiConsumerConfiguration {
             if (null == nakadiHandler) {
                 nakadiHandler = AnnotationUtils.findAnnotation(beanType, NakadiHandler.class);
             }
-            final SetMultimap<String, String> consumerEvents = LinkedHashMultimap.create();
+            final SetMultimap<String, String> consumerToEvents = LinkedHashMultimap.create();
             if (null != nakadiHandler) {
-                addConsumerEvent(consumerEvents, nakadiHandler.eventName(), nakadiHandler.consumerName(), nakadiHandler.consumerNamePostfix());
+                addEventToConsumer(consumerToEvents, nakadiHandler.eventName(), nakadiHandler.consumerName(), nakadiHandler.consumerNamePostfix());
             }
             if (NakadiEventHandler.class.isAssignableFrom(beanType)) {
                 final Object bean = applicationContext.getBean(beanName);
@@ -87,20 +83,20 @@ public class NakadiConsumerConfiguration {
                 if (null == beanEventConsumers || beanEventConsumers.isEmpty()) {
                     LOGGER.info("Empty Nakadi event consumers provided by [{} / {}]", beanName, beanType);
                 } else {
-                    beanEventConsumers.forEach(element -> addConsumerEvent(
-                            consumerEvents, element.getEventName(), element.getConsumerName(), false));
+                    beanEventConsumers.forEach(eventConsumer -> addEventToConsumer(
+                            consumerToEvents, eventConsumer.getEventName(), eventConsumer.getConsumerName(), false));
                 }
             }
-            return consumerEvents.entries().stream().map( element -> new ConsumerEventConfig(
-                            element.getKey(), element.getValue(), entry.getValue())).
+            return consumerToEvents.entries().stream().map(consumerEventEntry -> new ConsumerEventConfig(
+                            consumerEventEntry.getKey(), consumerEventEntry.getValue(), beanNameHandlerEntry.getValue())).
                     collect(Collectors.toList());
             //J+
-        }).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toList());
+        }).flatMap(Collection::stream).collect(Collectors.toList());
         return new ConsumerEventConfigList(list);
     }
 
-    private void addConsumerEvent(final SetMultimap<String, String> consumerEvents, final String eventName, final String consumerName,
-                                  final boolean consumerNamePostfix) {
+    private void addEventToConsumer(final SetMultimap<String, String> consumerToEvents, final String eventName, final String consumerName,
+                                    final boolean consumerNamePostfix) {
         checkArgument(isNotEmpty(eventName), "eventName must not be empty");
 
         final String eventConsumerName;
@@ -112,7 +108,7 @@ public class NakadiConsumerConfiguration {
             eventConsumerName = isNotEmpty(consumerName) ? consumerName : nakadiConsumerProperties.getDefaultConsumerName();
         }
         checkArgument(isNotEmpty(eventConsumerName), "consumerName must not be empty");
-        consumerEvents.put(eventConsumerName, eventName);
+        consumerToEvents.put(eventConsumerName, eventName);
     }
 
     @Bean

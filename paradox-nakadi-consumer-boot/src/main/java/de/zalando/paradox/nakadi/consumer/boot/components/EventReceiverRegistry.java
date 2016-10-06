@@ -90,7 +90,6 @@ public class EventReceiverRegistry {
         checkArgument(StringUtils.isNotEmpty(eventName), "eventName must not be empty");
         checkArgument(null != handler, "handler must not be null");
 
-        final EventTypeConsumer etc = new EventTypeConsumer(eventName, consumerName);
         final PartitionCoordinator coordinator = getPartitionCoordinator(consumerName, eventName);
         ConsumerConfig.Builder builder = ConsumerConfig.Builder.of(nakadiUrl, eventName, coordinator);
         if (null != authorizationValueProvider) {
@@ -134,16 +133,18 @@ public class EventReceiverRegistry {
                 withStreamKeepAliveLimit(config.getEventsStreamKeepAliveLimit()).build());
         //J+
 
+        final EventTypeConsumer eventTypeConsumer = new EventTypeConsumer(eventName, consumerName);
         final ConsumerConfig config = withEventHandler(builder, handler).build();
         final HttpReactiveReceiver receiver = new HttpReactiveReceiver(new HttpGetPartitionsHandler(config));
-        checkState(null == receiverMap.putIfAbsent(etc, receiver), "Duplicated configuration for [%s]", etc);
-        handlerMap.putIfAbsent(etc, handler);
+        checkState(null == receiverMap.putIfAbsent(eventTypeConsumer, receiver), "Duplicated configuration for [%s]",
+            eventTypeConsumer);
+        handlerMap.putIfAbsent(eventTypeConsumer, handler);
 
         LOGGER.info("Starting receiver for consumerName [{}] for event type [{}]", consumerName, config.getEventType());
         receiver.init();
     }
 
-    private ConsumerConfig.Builder withEventHandler(final ConsumerConfig.Builder builder,
+    private static ConsumerConfig.Builder withEventHandler(final ConsumerConfig.Builder builder,
             final EventHandler<?> handler) {
 
         // only one interface must be implemented
