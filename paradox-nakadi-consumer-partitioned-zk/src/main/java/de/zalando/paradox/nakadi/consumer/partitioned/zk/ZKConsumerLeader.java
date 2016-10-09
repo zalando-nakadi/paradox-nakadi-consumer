@@ -9,6 +9,9 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -37,6 +40,9 @@ abstract class ZKConsumerLeader<T> {
     private final ZKHolder zkHolder;
 
     private final String consumerName;
+
+    private final ScheduledExecutorService closeLeaderSelectorExecutorService = Executors
+            .newSingleThreadScheduledExecutor();
 
     ZKConsumerLeader(final ZKHolder zkHolder, final String consumerName, final ZKMember member) {
         this.zkHolder = requireNonNull(zkHolder, "zkHolder must not be null");
@@ -99,7 +105,7 @@ abstract class ZKConsumerLeader<T> {
         }
     }
 
-    void initGroupLeadership(final T t, final LeadershipChangedListener<T> delegate) throws Exception {
+    void initGroupLeadership(final T t, final LeadershipChangedListener<T> leadershipChangedListener) throws Exception {
 
         if (leaderControls.containsKey(t)) {
             return;
@@ -118,14 +124,16 @@ abstract class ZKConsumerLeader<T> {
                             // mark in zookeeper / information only
                             setLeaderInfo(getLeaderInfoPath(t), member.getMemberId());
 
-                            delegate.takeLeadership(t, member);
+                            leadershipChangedListener.takeLeadership(t, member);
                             leaderControl.takeLeadership();
                         } finally {
                             try {
                                 LOGGER.info("Member [{}] relinquished leadership for [{}]", member.getMemberId(), t);
-                                leaderControls.remove(t);
+
+                                final LeaderControl leaderControl = leaderControls.remove(t);
+                                closeLeaderSelectorAsync(leaderControl.selector);
                             } finally {
-                                delegate.relinquishLeadership(t, member);
+                                leadershipChangedListener.relinquishLeadership(t, member);
                             }
                         }
                     }
@@ -160,8 +168,11 @@ abstract class ZKConsumerLeader<T> {
                 selector.start();
             } catch (final Throwable throwable) {
                 leaderControls.remove(t);
+                selector.close();
                 ThrowableUtils.throwException(throwable);
             }
+        } else {
+            selector.close();
         }
     }
 
@@ -182,22 +193,7 @@ abstract class ZKConsumerLeader<T> {
 
     public void close() {
         LOGGER.info("Closing for member [{}]", member.getMemberId());
-
         leaderControls.values().forEach(LeaderControl::relinquishLeadership);
-
-        try {
-            Thread.sleep(1000L);
-        } catch (InterruptedException e) {
-            ThrowableUtils.throwException(e);
-        }
-
-        leaderControls.values().forEach(leaderControl -> {
-            try {
-                leaderControl.selector.close();
-            } catch (Exception e) {
-                LOGGER.warn("Unexpected error while closing leader selector [{}]", e);
-            }
-        });
         leaderControls.clear();
     }
 
@@ -215,4 +211,21 @@ abstract class ZKConsumerLeader<T> {
             curator.setData().forPath(path, memberId.getBytes("UTF-8"));
         }
     }
+
+    private void closeLeaderSelectorAsync(final LeaderSelector leaderSelector) {
+        closeLeaderSelectorExecutorService.schedule(decorateWithExceptionLogger(leaderSelector::close), 1,
+            TimeUnit.SECONDS);
+    }
+
+    private static Runnable decorateWithExceptionLogger(final Runnable runnable) {
+        return
+            () -> {
+            try {
+                runnable.run();
+            } catch (final Exception e) {
+                LOGGER.warn("Unexpected error while closing leader selector", e);
+            }
+        };
+    }
+
 }
