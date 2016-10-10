@@ -9,6 +9,9 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -32,13 +35,14 @@ abstract class ZKConsumerLeader<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ZKConsumerLeader.class);
 
-    private static final long WAIT_MILLIS_BEFORE_CLOSING_LEADER_SELECTOR = 1000L;
-
     private final ZKMember member;
 
     private final ZKHolder zkHolder;
 
     private final String consumerName;
+
+    private final ScheduledExecutorService closeLeaderSelectorExecutorService = Executors
+            .newSingleThreadScheduledExecutor();
 
     ZKConsumerLeader(final ZKHolder zkHolder, final String consumerName, final ZKMember member) {
         this.zkHolder = requireNonNull(zkHolder, "zkHolder must not be null");
@@ -123,8 +127,14 @@ abstract class ZKConsumerLeader<T> {
                             leadershipChangedListener.takeLeadership(t, member);
                             leaderControl.takeLeadership();
                         } finally {
-                            LOGGER.info("Member [{}] relinquished leadership for [{}]", member.getMemberId(), t);
-                            leadershipChangedListener.relinquishLeadership(t, member);
+                            try {
+                                LOGGER.info("Member [{}] relinquished leadership for [{}]", member.getMemberId(), t);
+
+                                final LeaderControl leaderControl = leaderControls.remove(t);
+                                closeLeaderSelectorAsync(leaderControl.selector);
+                            } finally {
+                                leadershipChangedListener.relinquishLeadership(t, member);
+                            }
                         }
                     }
 
@@ -154,8 +164,6 @@ abstract class ZKConsumerLeader<T> {
             LOGGER.info("Init member [{}] leadership for [{}]", member.getMemberId(), t);
 
             // restart selector every time the leadership is lost
-            selector.autoRequeue();
-
             try {
                 selector.start();
             } catch (final Throwable throwable) {
@@ -180,35 +188,12 @@ abstract class ZKConsumerLeader<T> {
         if (null != leaderControl) {
             LOGGER.info("Close member [{}] leadership for [{}]", member.getMemberId(), t);
             leaderControl.relinquishLeadership();
-
-            try {
-                Thread.sleep(WAIT_MILLIS_BEFORE_CLOSING_LEADER_SELECTOR);
-            } catch (InterruptedException e) {
-                ThrowableUtils.throwException(e);
-            }
-
-            leaderControl.selector.close();
         }
     }
 
     public void close() {
         LOGGER.info("Closing for member [{}]", member.getMemberId());
-
         leaderControls.values().forEach(LeaderControl::relinquishLeadership);
-
-        try {
-            Thread.sleep(WAIT_MILLIS_BEFORE_CLOSING_LEADER_SELECTOR);
-        } catch (InterruptedException e) {
-            ThrowableUtils.throwException(e);
-        }
-
-        leaderControls.values().forEach(leaderControl -> {
-            try {
-                leaderControl.selector.close();
-            } catch (Exception e) {
-                LOGGER.warn("Unexpected error while closing leader selector [{}]", e);
-            }
-        });
         leaderControls.clear();
     }
 
@@ -225,6 +210,22 @@ abstract class ZKConsumerLeader<T> {
             curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
             curator.setData().forPath(path, memberId.getBytes("UTF-8"));
         }
+    }
+
+    private void closeLeaderSelectorAsync(final LeaderSelector leaderSelector) {
+        closeLeaderSelectorExecutorService.schedule(decorateWithExceptionLogger(leaderSelector::close), 1,
+            TimeUnit.SECONDS);
+    }
+
+    private static Runnable decorateWithExceptionLogger(final Runnable runnable) {
+        return
+            () -> {
+            try {
+                runnable.run();
+            } catch (final Exception e) {
+                LOGGER.warn("Unexpected error while closing leader selector", e);
+            }
+        };
     }
 
 }
