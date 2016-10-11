@@ -106,6 +106,12 @@ public class ZKLeaderConsumerPartitionCoordinatorTest extends AbstractZKTest {
         mockRebalancer1.await(4, TimeUnit.SECONDS);
         mockRebalancer1.verify();
         assertThat(getLast(mockRebalancer1.verifyCurrentMembers())).containsOnlyKeys(memberId1, memberId2);
+
+        mockRebalancer1.init(1, 0, 1);
+        coordinator2.close();
+        mockRebalancer1.await(4, TimeUnit.SECONDS);
+        mockRebalancer1.verify();
+        assertThat(getLast(mockRebalancer1.verifyCurrentMembers())).containsOnlyKeys(memberId1);
     }
 
     private ZKLeaderConsumerPartitionCoordinator getCoordinator(final String consumerName,
