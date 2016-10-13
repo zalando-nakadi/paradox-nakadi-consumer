@@ -4,12 +4,16 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderSelector;
 import org.apache.curator.framework.recipes.leader.LeaderSelectorListenerAdapter;
 import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.utils.CloseableExecutorService;
 import org.apache.curator.utils.CloseableUtils;
+import org.apache.curator.utils.ThreadUtils;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -31,10 +35,14 @@ abstract class ZKConsumerLeader<T> {
 
     private final ConcurrentMap<T, LeaderSelector> leaderSelectors = new ConcurrentHashMap<>();
 
+    private final ThreadFactory leaderSelectorThreadFactory;
+
     ZKConsumerLeader(final ZKHolder zkHolder, final String consumerName, final ZKMember member) {
         this.zkHolder = requireNonNull(zkHolder, "zkHolder must not be null");
         this.consumerName = requireNonNull(consumerName, "consumerName must not be null");
         this.member = requireNonNull(member, "member must not be null");
+
+        this.leaderSelectorThreadFactory = ThreadUtils.newThreadFactory("LeaderSelector-" + consumerName);
     }
 
     interface LeadershipChangedListener<T> {
@@ -54,6 +62,7 @@ abstract class ZKConsumerLeader<T> {
         }
 
         final LeaderSelector selector = new LeaderSelector(zkHolder.getCurator(), getLeaderSelectorPath(t),
+                new CloseableExecutorService(Executors.newSingleThreadExecutor(leaderSelectorThreadFactory), true),
                 new LeaderSelectorListenerAdapter() {
                     @Override
                     public void takeLeadership(final CuratorFramework client) throws Exception {
@@ -93,8 +102,6 @@ abstract class ZKConsumerLeader<T> {
                 selector.close();
                 ThrowableUtils.throwException(throwable);
             }
-        } else {
-            selector.close();
         }
     }
 
@@ -108,7 +115,13 @@ abstract class ZKConsumerLeader<T> {
 
     public void close() {
         LOGGER.info("Closing for member [{}]", member.getMemberId());
-        leaderSelectors.values().forEach(CloseableUtils::closeQuietly);
+        leaderSelectors.values().forEach(leaderSelector -> {
+            try {
+                leaderSelector.close();
+            } catch (Exception e) {
+                LOGGER.warn("Unexpected error while closing leader selector", e);
+            }
+        });
         leaderSelectors.clear();
     }
 
