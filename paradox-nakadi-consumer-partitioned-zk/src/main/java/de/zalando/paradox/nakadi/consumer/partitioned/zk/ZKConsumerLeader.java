@@ -12,7 +12,6 @@ import org.apache.curator.framework.recipes.leader.LeaderSelector;
 import org.apache.curator.framework.recipes.leader.LeaderSelectorListenerAdapter;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.utils.CloseableExecutorService;
-import org.apache.curator.utils.CloseableUtils;
 import org.apache.curator.utils.ThreadUtils;
 
 import org.apache.zookeeper.CreateMode;
@@ -109,7 +108,7 @@ abstract class ZKConsumerLeader<T> {
         final LeaderSelector leaderSelector = leaderSelectors.remove(t);
         if (null != leaderSelector) {
             LOGGER.info("Close member [{}] leadership for [{}]", member.getMemberId(), t);
-            CloseableUtils.closeQuietly(leaderSelector);
+            leaderSelector.close();
         }
     }
 
