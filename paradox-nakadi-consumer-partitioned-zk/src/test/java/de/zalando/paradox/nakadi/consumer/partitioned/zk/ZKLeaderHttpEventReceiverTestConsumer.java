@@ -1,5 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.partitioned.zk;
 
+import java.util.Collections;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +25,8 @@ public class ZKLeaderHttpEventReceiverTestConsumer {
         final ZKHolder zkHolder = new ZKHolder("localhost:2181", null, null);
         zkHolder.init();
 
-        final PartitionCoordinator coordinator = new ZKLeaderConsumerPartitionCoordinator(zkHolder, consumerName);
+        final PartitionCoordinator coordinator = new ZKLeaderConsumerPartitionCoordinator(zkHolder, consumerName,
+                Collections.emptyList());
         coordinator.init();
 
         try {

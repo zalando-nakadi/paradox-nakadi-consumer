@@ -53,7 +53,7 @@ public class RawContentResponseHandler extends AbstractResponseHandler {
                 coordinator.commit(lastCursor);
             } catch (Throwable t) {
                 LOGGER.error("Handler error at firstCursor [{}] , lastCursor [{}]", firstCursor, lastCursor);
-                coordinator.error(t, eventTypePartition);
+                coordinator.error(t, eventTypePartition, lastCursor.getOffset(), content);
             }
         }
     }

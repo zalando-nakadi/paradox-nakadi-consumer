@@ -37,26 +37,26 @@ abstract class AbstractEventsResponseBulkHandler<T> extends AbstractResponseHand
 
             final List<T> batchEvents = optionalBatch.get().getEvents();
             if (null != batchEvents && !batchEvents.isEmpty()) {
-                handleEvents(cursor, batchEvents);
+                handleEvents(cursor, batchEvents, content);
             } else {
                 try {
                     log.info("Keep alive offset [{}]", cursor.getOffset());
                     coordinator.commit(cursor);
                 } catch (Throwable t) {
                     log.error("Handler error at cursor [{}]", cursor);
-                    coordinator.error(t, eventTypePartition);
+                    coordinator.error(t, eventTypePartition, cursor.getOffset(), content);
                 }
             }
         }
     }
 
-    private void handleEvents(final EventTypeCursor cursor, final List<T> events) {
+    private void handleEvents(final EventTypeCursor cursor, final List<T> events, final String content) {
         try {
             delegate.onEvent(cursor, events);
             coordinator.commit(cursor);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             log.error("Handler error at cursor [{}]", cursor);
-            coordinator.error(t, eventTypePartition);
+            coordinator.error(t, eventTypePartition, cursor.getOffset(), content);
         }
     }
 

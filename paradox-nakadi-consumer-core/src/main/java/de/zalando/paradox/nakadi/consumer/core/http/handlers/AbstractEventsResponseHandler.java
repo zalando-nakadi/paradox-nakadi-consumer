@@ -1,12 +1,8 @@
 package de.zalando.paradox.nakadi.consumer.core.http.handlers;
 
-import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
-
 import java.util.List;
-import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -18,7 +14,6 @@ import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionCoordinator;
 import de.zalando.paradox.nakadi.consumer.core.utils.LoggingUtils;
 
 abstract class AbstractEventsResponseHandler<T> extends AbstractResponseHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractEventsResponseHandler.class);
 
     private final EventHandler<T> delegate;
 
@@ -31,66 +26,46 @@ abstract class AbstractEventsResponseHandler<T> extends AbstractResponseHandler 
     @Override
     public void onResponse(final String content) {
         final String[] events = getEvents(content);
-        for (String event : events) {
-            final Optional<NakadiEventBatch<T>> optionalBatch = getEventBatch(event);
-            if (!optionalBatch.isPresent()) {
-                return;
-            }
+        for (final String event : events) {
 
-            final EventTypeCursor cursor = EventTypeCursor.of(eventTypePartition,
-                    optionalBatch.get().getCursor().getOffset());
+            final NakadiEventBatch<T> nakadiEventBatch = getNakadiEventBatch(event);
 
-            final List<T> batchEvents = optionalBatch.get().getEvents();
-            if (null != batchEvents && !batchEvents.isEmpty()) {
-                handleEvents(cursor, batchEvents);
-            } else {
-                try {
+            if (nakadiEventBatch != null) {
+                final EventTypeCursor cursor = EventTypeCursor.of(eventTypePartition,
+                        nakadiEventBatch.getCursor().getOffset());
+                final List<T> batchEvents = nakadiEventBatch.getEvents();
+
+                if (batchEvents == null || batchEvents.isEmpty()) {
                     log.info("Keep alive offset [{}]", cursor.getOffset());
-                    coordinator.commit(cursor);
-                } catch (Throwable t) {
-                    log.error("Handler error at cursor [{}]", cursor);
-                    coordinator.error(t, eventTypePartition);
+                } else {
+                    handleEvents(cursor, batchEvents, content);
                 }
             }
         }
     }
 
-    private void handleEvents(final EventTypeCursor cursor, final List<T> events) {
-        for (int i = 0; i < events.size(); i++) {
-            final EventTypeCursor commitCursor = decreaseCursor(cursor, events.size() - (i + 1));
-            try {
-                delegate.onEvent(commitCursor, events.get(i));
-                coordinator.commit(commitCursor);
-            } catch (Throwable t) {
-                log.error("Handler error at cursor [{}]", commitCursor);
-                coordinator.error(t, eventTypePartition);
-            }
+    @Nullable
+    private NakadiEventBatch<T> getNakadiEventBatch(final String event) {
+        try {
+            return getEventBatch(event);
+        } catch (final Throwable t) {
+            coordinator.error(t, eventTypePartition, null, event);
+            return null;
         }
     }
 
-    /**
-     * Decreases the cursor as received from Nakadi by n. This is needed because Nakadi returns a cursor that points to
-     * the end of a chunk, i.e., the last delivered event. If n is lower or equals 0, the input cursor is returned. Note
-     * that the special cursor 'BEGIN' cannot be decremented and in this case this method also returns the input cursor.
-     *
-     * @return  A new instance of {@link EventTypeCursor} with an offset decremented by n, or the same instance if the
-     *          offset cannot be decremented.
-     */
-    private EventTypeCursor decreaseCursor(final EventTypeCursor cursor, final int n) {
-        if (n > 0) {
+    private void handleEvents(final EventTypeCursor cursor, final List<T> events, final String content) {
+        for (final T event : events) {
             try {
-                final long nextOffset = Long.parseLong(cursor.getOffset()) - n;
-                return EventTypeCursor.of(cursor.getEventTypePartition(), Long.toString(nextOffset));
-            } catch (NumberFormatException ignore) {
-                LOGGER.warn("Cannot advance cursor [{}] by [{}] due to [{}]", cursor, n, getMessage(ignore));
-
-                // offset can be BEGIN
-                return cursor;
+                delegate.onEvent(cursor, event);
+            } catch (final Throwable t) {
+                log.error("Handler error at cursor [{}]", cursor);
+                coordinator.error(t, eventTypePartition, cursor.getOffset(), content);
             }
-        } else {
-            return cursor;
         }
+
+        coordinator.commit(cursor);
     }
 
-    abstract Optional<NakadiEventBatch<T>> getEventBatch(final String string);
+    abstract NakadiEventBatch<T> getEventBatch(final String string);
 }

@@ -1,7 +1,10 @@
 package de.zalando.paradox.nakadi.consumer.partitioned.zk;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+
+import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
 
@@ -9,6 +12,7 @@ import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiPartition;
+import de.zalando.paradox.nakadi.consumer.core.http.handlers.EventErrorHandler;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionAdminService;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionOffsetManagement;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.impl.AbstractPartitionCoordinator;
@@ -23,11 +27,12 @@ abstract class AbstractZKConsumerPartitionCoordinator extends AbstractPartitionC
     private final ZKConsumerOffset consumerOffset;
     private final ZKAdminService adminService;
 
-    AbstractZKConsumerPartitionCoordinator(final Logger log, final ZKHolder zkHolder, final String consumerName) {
+    AbstractZKConsumerPartitionCoordinator(final Logger log, final ZKHolder zkHolder, final String consumerName,
+            final List<EventErrorHandler> eventErrorHandlers) {
         super(log);
         this.consumerName = consumerName;
         this.consumerOffset = new ZKConsumerOffset(zkHolder, consumerName);
-        this.offsetManagement = new ZKConsumerSyncOffsetManagement(this.consumerOffset, this, this);
+        this.offsetManagement = new ZKConsumerSyncOffsetManagement(this.consumerOffset, this, this, eventErrorHandlers);
         this.adminService = new ZKAdminService(zkHolder);
     }
 
@@ -42,8 +47,9 @@ abstract class AbstractZKConsumerPartitionCoordinator extends AbstractPartitionC
     }
 
     @Override
-    public void error(final Throwable t, final EventTypePartition eventTypePartition) {
-        offsetManagement.error(t, eventTypePartition);
+    public void error(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String offset,
+            final String rawEvent) {
+        offsetManagement.error(t, eventTypePartition, offset, rawEvent);
     }
 
     @Override

@@ -1,5 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.boot;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.zalando.paradox.nakadi.consumer.core.DefaultObjectMapper;
@@ -31,21 +33,25 @@ class ReplayHandler {
 
     private static final PartitionCoordinator THROWING_COORDINATOR = new EmptyPartitionCoordinator() {
         @Override
-        public void error(final Throwable t, final EventTypePartition eventTypePartition) {
+        public void error(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String cursor,
+                final String rawEvent) {
+
+            // todo should we add the handler?
             ThrowableUtils.throwException(t);
         }
     };
 
     EventTypeCursor getQueryCursor(final EventTypeCursor cursor) {
-        final String queryOffset;
+        return EventTypeCursor.of(cursor.getEventTypePartition(), getQueryOffset(cursor));
+    }
+
+    private String getQueryOffset(final EventTypeCursor cursor) {
         if (PARTITION_BEGIN.equals(cursor.getOffset())) {
-            queryOffset = cursor.getOffset();
+            return cursor.getOffset();
         } else {
             final long value = Long.parseLong(cursor.getOffset()) - 1;
-            queryOffset = value >= 0 ? Long.toString(value) : PARTITION_BEGIN;
+            return value >= 0 ? Long.toString(value) : PARTITION_BEGIN;
         }
-
-        return EventTypeCursor.of(cursor.getEventTypePartition(), queryOffset);
     }
 
     @SuppressWarnings("unchecked")
