@@ -71,8 +71,7 @@ abstract class AbstractZKConsumerPartitionCoordinator extends AbstractPartitionC
     }
 
     private String nextOffset(final EventType eventType, final NakadiPartition nakadiPartition) throws Exception {
-        String result = startNewestAvailableOffset ? nakadiPartition.getNewestAvailableOffset()
-                                                   : nakadiPartition.getOldestAvailableOffset();
+        String result = startNewestAvailableOffset ? nakadiPartition.getNewestAvailableOffset() : "BEGIN";
 
         final String path = consumerOffset.getOffsetPath(eventType.getName(), nakadiPartition.getPartition());
         final String zkOffset = consumerOffset.getOffset(path);
