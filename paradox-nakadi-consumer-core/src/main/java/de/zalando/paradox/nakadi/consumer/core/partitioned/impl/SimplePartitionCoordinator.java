@@ -26,8 +26,7 @@ public class SimplePartitionCoordinator extends AbstractPartitionCoordinator {
     private final List<EventErrorHandler> eventErrorHandlerList;
 
     public SimplePartitionCoordinator() {
-        super(LoggerFactory.getLogger(SimplePartitionCoordinator.class));
-        eventErrorHandlerList = Collections.emptyList();
+        this(Collections.emptyList());
     }
 
     public SimplePartitionCoordinator(final List<EventErrorHandler> eventErrorHandlers) {

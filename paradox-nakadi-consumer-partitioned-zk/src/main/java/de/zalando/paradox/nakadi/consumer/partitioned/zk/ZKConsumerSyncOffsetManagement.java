@@ -79,7 +79,7 @@ class ZKConsumerSyncOffsetManagement implements PartitionOffsetManagement {
             eventErrorHandlers.forEach(eventErrorHandler ->
                     eventErrorHandler.onError(t, eventTypePartition, offset, rawEvent));
 
-            LOGGER.error("Error [{}] reason [{}] raw event [{}] ", eventTypePartition, getMessage(t), t, rawEvent);
+            LOGGER.error("Error [{}] reason [{}] raw event [{}] ", eventTypePartition, getMessage(t), rawEvent, t);
         }
     }
 
