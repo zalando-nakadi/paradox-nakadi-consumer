@@ -7,6 +7,7 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 import java.util.Collections;
 import java.util.List;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
@@ -34,10 +35,10 @@ class ZKConsumerSyncOffsetManagement implements PartitionOffsetManagement {
     private final ZKConsumerOffset consumerOffset;
     private final List<EventErrorHandler> eventErrorHandlers;
 
-    ZKConsumerSyncOffsetManagement(final ZKConsumerOffset consumerOffset,
-            final PartitionCommitCallbackProvider commitCallbackProvider,
-            final PartitionRebalanceListenerProvider rebalanceListenerProvider,
-            final List<EventErrorHandler> eventErrorHandlers) {
+    ZKConsumerSyncOffsetManagement(@Nonnull final ZKConsumerOffset consumerOffset,
+            @Nonnull final PartitionCommitCallbackProvider commitCallbackProvider,
+            @Nonnull final PartitionRebalanceListenerProvider rebalanceListenerProvider,
+            @Nonnull final List<EventErrorHandler> eventErrorHandlers) {
         this.commitCallbackProvider = commitCallbackProvider;
         this.rebalanceListenerProvider = rebalanceListenerProvider;
         this.consumerOffset = consumerOffset;

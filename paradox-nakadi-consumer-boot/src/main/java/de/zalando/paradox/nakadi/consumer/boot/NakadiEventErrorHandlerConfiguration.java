@@ -5,19 +5,14 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import org.zalando.stups.tokens.config.AccessTokensBeanAutoConfiguration;
 
 import de.zalando.paradox.nakadi.consumer.boot.components.EventErrorHandlerList;
 import de.zalando.paradox.nakadi.consumer.core.http.handlers.EventErrorHandler;
 
 @Configuration
-@AutoConfigureAfter(AccessTokensBeanAutoConfiguration.class)
 public class NakadiEventErrorHandlerConfiguration {
 
     @Autowired

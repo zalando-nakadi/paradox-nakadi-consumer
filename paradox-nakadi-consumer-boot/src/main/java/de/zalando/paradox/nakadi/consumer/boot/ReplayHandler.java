@@ -36,7 +36,6 @@ class ReplayHandler {
         public void error(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String cursor,
                 final String rawEvent) {
 
-            // todo should we add the handler?
             ThrowableUtils.throwException(t);
         }
     };

@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -30,8 +29,7 @@ public class EventUtils {
 
     private EventUtils() { }
 
-    public static Optional<NakadiEventBatch<String>> getRawEventBatch(final ObjectMapper jsonMapper,
-            final String string) {
+    public static NakadiEventBatch<String> getRawEventBatch(final ObjectMapper jsonMapper, final String string) {
         try {
             final EventReader reader = new EventReader(jsonMapper, string).invoke();
             final JsonNode eventsNode = reader.getEventsNode();
@@ -60,16 +58,15 @@ public class EventUtils {
                 rawEvents = Collections.emptyList();
             }
 
-            return Optional.of(new NakadiEventBatch<>(new NakadiCursor(reader.getPartition(), reader.getOffset()),
-                        rawEvents));
+            return new NakadiEventBatch<>(new NakadiCursor(reader.getPartition(), reader.getOffset()), rawEvents);
         } catch (IOException e) {
             LOGGER.error("Error while parsing event batch from [{}]", string, e);
-            return Optional.empty();
+            ThrowableUtils.throwException(e);
+            return null;
         }
     }
 
-    public static Optional<NakadiEventBatch<JsonNode>> getJsonEventBatch(final ObjectMapper jsonMapper,
-            final String string) {
+    public static NakadiEventBatch<JsonNode> getJsonEventBatch(final ObjectMapper jsonMapper, final String string) {
         try {
             final EventReader reader = new EventReader(jsonMapper, string).invoke();
             final JsonNode eventsNode = reader.getEventsNode();
@@ -88,11 +85,11 @@ public class EventUtils {
                 jsonEvents = Collections.emptyList();
             }
 
-            return Optional.of(new NakadiEventBatch<>(new NakadiCursor(reader.getPartition(), reader.getOffset()),
-                        jsonEvents));
+            return new NakadiEventBatch<>(new NakadiCursor(reader.getPartition(), reader.getOffset()), jsonEvents);
         } catch (IOException e) {
             LOGGER.error("Error while parsing event json from [{}]", string, e);
-            return Optional.empty();
+            ThrowableUtils.throwException(e);
+            return null;
         }
     }
 
