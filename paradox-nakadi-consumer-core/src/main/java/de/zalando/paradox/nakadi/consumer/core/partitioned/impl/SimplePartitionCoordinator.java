@@ -68,18 +68,18 @@ public class SimplePartitionCoordinator extends AbstractPartitionCoordinator {
 
     private Function<NakadiPartition, EventTypeCursor> getOffsetSelector(final EventType eventType) {
         return
-            entry -> {
+            nakadiPartition -> {
             final String offset;
             if (startNewestAvailableOffset) {
-                offset = entry.getNewestAvailableOffset();
+                offset = nakadiPartition.getNewestAvailableOffset();
             } else {
-                offset = entry.getOldestAvailableOffset();
+                offset = "BEGIN";
 
                 // messages will be replayed on each restart
                 log.warn("Using oldest available offset [{}] without persistent storage.", offset);
             }
 
-            return EventTypeCursor.of(EventTypePartition.of(eventType, entry.getPartition()), offset);
+            return EventTypeCursor.of(EventTypePartition.of(eventType, nakadiPartition.getPartition()), offset);
         };
     }
 
