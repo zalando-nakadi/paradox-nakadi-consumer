@@ -1,5 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.core.http.handlers;
 
+import static java.util.Objects.requireNonNull;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,30 +31,28 @@ public class RawContentResponseHandler extends AbstractResponseHandler {
     public void onResponse(final String content) {
         final String[] events = getEvents(content);
         if (events.length > 0) {
-            final NakadiEventCursor nakadiFirstCursor = getEventCursor(events[0]);
+            final NakadiEventCursor nakadiFirstCursor = requireNonNull(getEventCursor(events[0]),
+                    "Nakadi event cursor must not be null!");
 
-            if (null != nakadiFirstCursor) {
+            final NakadiEventCursor nakadiLastCursor = events.length > 1 ? getEventCursor(events[events.length - 1])
+                                                                         : nakadiFirstCursor;
 
-                final NakadiEventCursor nakadiLastCursor = events.length > 1 ? getEventCursor(events[events.length - 1])
-                                                                             : nakadiFirstCursor;
+            final EventTypeCursor firstCursor = EventTypeCursor.of(eventTypePartition,
+                    nakadiFirstCursor.getCursor().getOffset());
+            final EventTypeCursor lastCursor = EventTypeCursor.of(eventTypePartition,
+                    nakadiLastCursor.getCursor().getOffset());
 
-                final EventTypeCursor firstCursor = EventTypeCursor.of(eventTypePartition,
-                        nakadiFirstCursor.getCursor().getOffset());
-                final EventTypeCursor lastCursor = EventTypeCursor.of(eventTypePartition,
-                        nakadiLastCursor.getCursor().getOffset());
+            Preconditions.checkArgument(firstCursor.getPartition().equals(lastCursor.getPartition()),
+                "Cursor partitions differ [%s] vs [%s]", firstCursor.getPartition(), lastCursor.getPartition());
 
-                Preconditions.checkArgument(firstCursor.getPartition().equals(lastCursor.getPartition()),
-                    "Cursor partitions differ [%s] vs [%s]", firstCursor.getPartition(), lastCursor.getPartition());
-
-                try {
-                    delegate.onEvent(lastCursor, content);
-                } catch (Throwable t) {
-                    LOGGER.error("Handler error at firstCursor [{}] , lastCursor [{}]", firstCursor, lastCursor);
-                    coordinator.error(t, eventTypePartition, lastCursor.getOffset(), content);
-                }
-
-                coordinator.commit(lastCursor);
+            try {
+                delegate.onEvent(lastCursor, content);
+            } catch (Throwable t) {
+                LOGGER.error("Handler error at firstCursor [{}] , lastCursor [{}]", firstCursor, lastCursor);
+                coordinator.error(t, eventTypePartition, lastCursor.getOffset(), content);
             }
+
+            coordinator.commit(lastCursor);
         }
     }
 }

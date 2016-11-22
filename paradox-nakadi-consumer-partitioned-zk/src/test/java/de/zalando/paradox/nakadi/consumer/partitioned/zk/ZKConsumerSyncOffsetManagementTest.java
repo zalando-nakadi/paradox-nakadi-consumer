@@ -59,6 +59,6 @@ public class ZKConsumerSyncOffsetManagementTest {
         zKConsumerSyncOffsetManagement.error(new RuntimeException(), eventTypePartition, "2324", "event");
 
         Mockito.verify(eventErrorHandler).onError(Mockito.any(Throwable.class), Mockito.any(EventTypePartition.class),
-            eq("2324"), Mockito.anyString());
+            eq("2324"), eq("event"));
     }
 }

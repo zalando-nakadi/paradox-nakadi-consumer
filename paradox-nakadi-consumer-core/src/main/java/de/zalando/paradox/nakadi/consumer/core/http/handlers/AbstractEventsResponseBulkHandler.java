@@ -1,5 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.core.http.handlers;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,20 +28,18 @@ abstract class AbstractEventsResponseBulkHandler<T> extends AbstractResponseHand
     public void onResponse(final String content) {
         final String[] events = getEvents(content);
         for (final String event : events) {
-            final NakadiEventBatch<T> nakadiEventBatch = getEventBatch(event);
+            final NakadiEventBatch<T> nakadiEventBatch = requireNonNull(getEventBatch(event),
+                    "nakadiEventBatch must not be null");
 
-            if (nakadiEventBatch != null) {
+            final EventTypeCursor cursor = EventTypeCursor.of(eventTypePartition,
+                    nakadiEventBatch.getCursor().getOffset());
 
-                final EventTypeCursor cursor = EventTypeCursor.of(eventTypePartition,
-                        nakadiEventBatch.getCursor().getOffset());
+            final List<T> batchEvents = nakadiEventBatch.getEvents();
 
-                final List<T> batchEvents = nakadiEventBatch.getEvents();
-
-                if (batchEvents == null || batchEvents.isEmpty()) {
-                    log.info("Keep alive offset [{}]", cursor.getOffset());
-                } else {
-                    handleEvents(cursor, batchEvents, content);
-                }
+            if (batchEvents == null || batchEvents.isEmpty()) {
+                log.info("Keep alive offset [{}]", cursor.getOffset());
+            } else {
+                handleEvents(cursor, batchEvents, content);
             }
         }
     }
