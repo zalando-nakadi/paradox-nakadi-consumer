@@ -106,7 +106,7 @@ public class RawContentResponseHandlerTest {
         handler.onResponse(ONE_EVENT);
 
         verify(delegate, times(1)).onEvent(any(), any());
-        verify(coordinator, times(0)).commit(any());
-        verify(coordinator, times(1)).error(any(), any());
+        verify(coordinator, times(1)).commit(any());
+        verify(coordinator, times(1)).error(any(), any(), any(), any());
     }
 }
