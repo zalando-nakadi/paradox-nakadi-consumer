@@ -124,6 +124,6 @@ public class ZKLeaderConsumerPartitionCoordinatorTest extends AbstractZKTest {
 
         return new ZKLeaderConsumerPartitionCoordinator(zkHolder, consumerName, member, consumerGroupMember,
                 new DelegatingConsumerPartitionRebalanceStrategy(rebalancer, mockRebalancer, rebalancerMock),
-                consumerPartitionLeader);
+                consumerPartitionLeader, Collections.emptyList());
     }
 }

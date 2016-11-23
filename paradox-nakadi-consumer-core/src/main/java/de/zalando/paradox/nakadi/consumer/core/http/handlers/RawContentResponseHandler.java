@@ -1,6 +1,6 @@
 package de.zalando.paradox.nakadi.consumer.core.http.handlers;
 
-import java.util.Optional;
+import static java.util.Objects.requireNonNull;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,30 +31,28 @@ public class RawContentResponseHandler extends AbstractResponseHandler {
     public void onResponse(final String content) {
         final String[] events = getEvents(content);
         if (events.length > 0) {
-            final Optional<NakadiEventCursor> optionalFirstCursor = getEventCursor(events[0]);
-            if (!optionalFirstCursor.isPresent()) {
-                return;
-            }
+            final NakadiEventCursor nakadiFirstCursor = requireNonNull(getEventCursor(events[0]),
+                    "Nakadi event cursor must not be null!");
 
-            final Optional<NakadiEventCursor> optionalLastCursor = events.length > 1
-                ? getEventCursor(events[events.length - 1]) : optionalFirstCursor;
-            if (!optionalLastCursor.isPresent()) {
-                return;
-            }
+            final NakadiEventCursor nakadiLastCursor = events.length > 1 ? getEventCursor(events[events.length - 1])
+                                                                         : nakadiFirstCursor;
 
             final EventTypeCursor firstCursor = EventTypeCursor.of(eventTypePartition,
-                    optionalFirstCursor.get().getCursor().getOffset());
+                    nakadiFirstCursor.getCursor().getOffset());
             final EventTypeCursor lastCursor = EventTypeCursor.of(eventTypePartition,
-                    optionalLastCursor.get().getCursor().getOffset());
+                    nakadiLastCursor.getCursor().getOffset());
+
             Preconditions.checkArgument(firstCursor.getPartition().equals(lastCursor.getPartition()),
                 "Cursor partitions differ [%s] vs [%s]", firstCursor.getPartition(), lastCursor.getPartition());
+
             try {
                 delegate.onEvent(lastCursor, content);
-                coordinator.commit(lastCursor);
             } catch (Throwable t) {
                 LOGGER.error("Handler error at firstCursor [{}] , lastCursor [{}]", firstCursor, lastCursor);
-                coordinator.error(t, eventTypePartition);
+                coordinator.error(t, eventTypePartition, lastCursor.getOffset(), content);
             }
+
+            coordinator.commit(lastCursor);
         }
     }
 }
