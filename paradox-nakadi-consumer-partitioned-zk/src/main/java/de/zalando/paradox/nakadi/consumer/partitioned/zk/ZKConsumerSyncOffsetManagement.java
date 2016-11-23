@@ -1,14 +1,21 @@
 package de.zalando.paradox.nakadi.consumer.partitioned.zk;
 
+import static java.util.Objects.requireNonNull;
+
 import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 
 import java.util.Collections;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
+import de.zalando.paradox.nakadi.consumer.core.http.handlers.EventErrorHandler;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionCommitCallback;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionCommitCallbackProvider;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionOffsetManagement;
@@ -26,13 +33,16 @@ class ZKConsumerSyncOffsetManagement implements PartitionOffsetManagement {
     private final PartitionCommitCallbackProvider commitCallbackProvider;
     private final PartitionRebalanceListenerProvider rebalanceListenerProvider;
     private final ZKConsumerOffset consumerOffset;
+    private final List<EventErrorHandler> eventErrorHandlers;
 
-    ZKConsumerSyncOffsetManagement(final ZKConsumerOffset consumerOffset,
-            final PartitionCommitCallbackProvider commitCallbackProvider,
-            final PartitionRebalanceListenerProvider rebalanceListenerProvider) {
+    ZKConsumerSyncOffsetManagement(@Nonnull final ZKConsumerOffset consumerOffset,
+            @Nonnull final PartitionCommitCallbackProvider commitCallbackProvider,
+            @Nonnull final PartitionRebalanceListenerProvider rebalanceListenerProvider,
+            @Nonnull final List<EventErrorHandler> eventErrorHandlers) {
         this.commitCallbackProvider = commitCallbackProvider;
         this.rebalanceListenerProvider = rebalanceListenerProvider;
         this.consumerOffset = consumerOffset;
+        this.eventErrorHandlers = requireNonNull(eventErrorHandlers);
     }
 
     @Override
@@ -58,14 +68,19 @@ class ZKConsumerSyncOffsetManagement implements PartitionOffsetManagement {
     }
 
     @Override
-    public void error(final Throwable t, final EventTypePartition eventTypePartition) {
+    public void error(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String offset,
+            final String rawEvent) {
 
         // it will unsubscribe reactive receiver
         if (ThrowableUtils.isUnrecoverableException(t)) {
             LOGGER.error("Error [{}] reason [{}]", eventTypePartition, getMessage(t));
             ThrowableUtils.throwException(t);
         } else {
-            LOGGER.error("Error [{}] reason [{}]", eventTypePartition, getMessage(t), t);
+
+            eventErrorHandlers.forEach(eventErrorHandler ->
+                    eventErrorHandler.onError(t, eventTypePartition, offset, rawEvent));
+
+            LOGGER.error("Error [{}] reason [{}] raw event [{}] ", eventTypePartition, getMessage(t), rawEvent, t);
         }
     }
 

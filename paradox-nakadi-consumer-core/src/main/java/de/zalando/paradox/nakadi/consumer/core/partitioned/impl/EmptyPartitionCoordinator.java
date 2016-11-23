@@ -2,6 +2,8 @@ package de.zalando.paradox.nakadi.consumer.core.partitioned.impl;
 
 import java.util.Collection;
 
+import javax.annotation.Nullable;
+
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
@@ -36,7 +38,8 @@ public class EmptyPartitionCoordinator implements PartitionCoordinator {
     public void flush(final EventTypePartition eventTypePartition) { }
 
     @Override
-    public void error(final Throwable t, final EventTypePartition eventTypePartition) { }
+    public void error(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String cursor,
+            final String rowEvent) { }
 
     @Override
     public void error(final int statusCode, final String content, final EventTypePartition eventTypePartition) { }

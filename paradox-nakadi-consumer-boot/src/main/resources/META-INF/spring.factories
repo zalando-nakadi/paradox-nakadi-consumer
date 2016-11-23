@@ -2,4 +2,5 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 de.zalando.paradox.nakadi.consumer.boot.NakadiConsumerConfiguration,\
 de.zalando.paradox.nakadi.consumer.boot.EventReceiverRegistryConfiguration,\
 de.zalando.paradox.nakadi.consumer.boot.ControllerConfiguration,\
+de.zalando.paradox.nakadi.consumer.boot.NakadiEventErrorHandlerConfiguration,\
 de.zalando.paradox.nakadi.consumer.boot.ClientConfiguration
