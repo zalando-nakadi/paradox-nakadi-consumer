@@ -86,20 +86,16 @@ public class JsonEventResponseHandlerTest {
         assertThat(objectMapper.writeValueAsString(jsonEventCaptor.getAllValues().get(1))).isEqualTo(TWO_EVENTS_2);
 
         final ArgumentCaptor<EventTypeCursor> coordinatorCursorCaptor = ArgumentCaptor.forClass(EventTypeCursor.class);
-        verify(coordinator, times(2)).commit(coordinatorCursorCaptor.capture());
+        verify(coordinator, times(1)).commit(coordinatorCursorCaptor.capture());
 
         assertThat(coordinatorCursorCaptor.getAllValues()).extracting("eventTypePartition", "offset").containsExactly(
-            Tuple.tuple(EVENT_TYPE_PARTITION, "8"), Tuple.tuple(EVENT_TYPE_PARTITION, "9"));
+            Tuple.tuple(EVENT_TYPE_PARTITION, "9"));
     }
 
     @Test
     public void testKeepAlive() {
         handler.onResponse(KEEP_ALIVE_EVENT);
         verify(delegate, times(0)).onEvent(any(), any());
-
-        final ArgumentCaptor<EventTypeCursor> coordinatorCursorCaptor = ArgumentCaptor.forClass(EventTypeCursor.class);
-        verify(coordinator, times(1)).commit(coordinatorCursorCaptor.capture());
-        assertThat(coordinatorCursorCaptor.getValue()).extracting("eventTypePartition", "offset").containsExactly(
-            EVENT_TYPE_PARTITION, "9");
+        verify(coordinator, times(0)).commit(any(EventTypeCursor.class));
     }
 }
