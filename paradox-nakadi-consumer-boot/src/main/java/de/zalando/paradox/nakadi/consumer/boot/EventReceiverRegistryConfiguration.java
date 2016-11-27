@@ -99,10 +99,6 @@ public class EventReceiverRegistryConfiguration {
         return nakadiConsumerProperties.getEventsBatchLimit();
     }
 
-    public Boolean getStartNewestAvailableOffset() {
-        return nakadiConsumerProperties.getStartNewestAvailableOffset();
-    }
-
     @Bean
     public EventReceiverRegistry eventReceiverRegistry(final EventReceiverRegistryConfiguration eventReceiverConfig) {
         return new EventReceiverRegistry(eventReceiverConfig, objectMapper);

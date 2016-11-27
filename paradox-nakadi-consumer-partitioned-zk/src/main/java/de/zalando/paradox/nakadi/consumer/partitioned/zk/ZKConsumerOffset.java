@@ -2,6 +2,10 @@ package de.zalando.paradox.nakadi.consumer.partitioned.zk;
 
 import static java.lang.String.format;
 
+import java.util.concurrent.CountDownLatch;
+
+import javax.annotation.Nullable;
+
 import org.apache.curator.framework.CuratorFramework;
 
 import org.apache.zookeeper.CreateMode;
@@ -28,17 +32,19 @@ class ZKConsumerOffset {
         this.consumerName = consumerName;
     }
 
-    public String getOffset(final EventType eventType, final String partition) throws Exception {
+    @Nullable
+    String getOffset(final EventType eventType, final String partition) throws Exception {
         final String path = getOffsetPath(eventType.getName(), partition);
         return getOffset(path);
     }
 
-    public String getOffset(final EventTypePartition eventTypePartition) throws Exception {
+    @Nullable
+    String getOffset(final EventTypePartition eventTypePartition) throws Exception {
         final String path = getOffsetPath(eventTypePartition.getName(), eventTypePartition.getPartition());
         return getOffset(path);
     }
 
-    public void setOffset(final EventTypeCursor cursor) throws Exception {
+    void setOffset(final EventTypeCursor cursor) throws Exception {
         final String path = getOffsetPath(cursor.getName(), cursor.getPartition());
         setOffset(path, cursor.getOffset());
     }
@@ -67,7 +73,12 @@ class ZKConsumerOffset {
         }
     }
 
-    public String getOffset(final String path) throws Exception {
+    @Nullable
+    String getOffset(final String path) throws Exception {
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        zkHolder.getCurator().sync().inBackground((client, event) -> countDownLatch.countDown()).forPath(path);
+        countDownLatch.await();
+
         try {
             final byte[] data = zkHolder.getCurator().getData().forPath(path);
             return null != data && data.length != 0 ? new String(data, "UTF-8") : null;

@@ -30,6 +30,6 @@ public class ZKConsumerOffsetTest extends AbstractZKTest {
         final String path = consumerOffset.getOffsetPath(etp.getName(), etp.getPartition());
         consumerOffset.delOffset(path);
         assertThat(consumerOffset.getOffset(etp.getEventType(), etp.getPartition())).isNull();
-
     }
+
 }

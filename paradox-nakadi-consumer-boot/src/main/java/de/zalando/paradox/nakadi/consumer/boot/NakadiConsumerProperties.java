@@ -44,7 +44,9 @@ public class NakadiConsumerProperties {
 
     private Integer eventsBatchLimit;
 
-    private Boolean startNewestAvailableOffset;
+    private boolean startNewestAvailableOffset = true;
+
+    private boolean deleteUnavailableCursors;
 
     private boolean eventTypePartitionCoordinator = true;
 
@@ -184,12 +186,20 @@ public class NakadiConsumerProperties {
         this.eventsBatchLimit = eventsBatchLimit;
     }
 
-    public Boolean getStartNewestAvailableOffset() {
+    public boolean isStartNewestAvailableOffset() {
         return startNewestAvailableOffset;
     }
 
-    public void setStartNewestAvailableOffset(final Boolean startNewestAvailableOffset) {
+    public void setStartNewestAvailableOffset(final boolean startNewestAvailableOffset) {
         this.startNewestAvailableOffset = startNewestAvailableOffset;
+    }
+
+    public boolean isDeleteUnavailableCursors() {
+        return deleteUnavailableCursors;
+    }
+
+    public void setDeleteUnavailableCursors(final boolean deleteUnavailableCursors) {
+        this.deleteUnavailableCursors = deleteUnavailableCursors;
     }
 
     public Long getPartitionsRetryRandomMillis() {

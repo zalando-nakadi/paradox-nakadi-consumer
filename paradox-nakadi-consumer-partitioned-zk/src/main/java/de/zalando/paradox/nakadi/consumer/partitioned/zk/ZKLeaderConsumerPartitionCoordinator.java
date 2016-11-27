@@ -165,9 +165,8 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
     }
 
     private void joinGroup(final EventType eventType) {
-        ZKGroupMember groupMember = groupMembers.get(eventType);
-        if (null == groupMember) {
-            groupMember = consumerGroupMember.newGroupMember(eventType, newGroupChangedListener());
+        if (!groupMembers.containsKey(eventType)) {
+            final ZKGroupMember groupMember = consumerGroupMember.newGroupMember(eventType, newGroupChangedListener());
             if (null == groupMembers.putIfAbsent(eventType, groupMember)) {
                 try {
                     log.info("Member [{}] is joining group for event type [{}] ", member.getMemberId(), eventType);
