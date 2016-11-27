@@ -22,7 +22,9 @@ import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 public class SimplePartitionCoordinator extends AbstractPartitionCoordinator {
 
     private final AtomicBoolean running = new AtomicBoolean(true);
+
     private boolean startNewestAvailableOffset = true;
+
     private final List<EventErrorHandler> eventErrorHandlerList;
 
     public SimplePartitionCoordinator() {
