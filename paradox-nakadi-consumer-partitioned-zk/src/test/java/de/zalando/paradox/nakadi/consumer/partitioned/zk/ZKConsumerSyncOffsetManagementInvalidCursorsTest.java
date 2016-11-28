@@ -70,7 +70,7 @@ public class ZKConsumerSyncOffsetManagementInvalidCursorsTest extends AbstractZK
 
         zkConsumerSyncOffsetManagement.error(412,
             "{\"type\":\"http://httpstatus.es/412\",\"title\":\"Precondition Failed\",\"status\":412,\"detail\":\"offset 123 for partition 8 is unavailable\"}",
-            EventTypePartition.of(EventType.of(TEST_EVENT), TEST_PARTITION));
+            eventTypePartition);
 
         assertThat(consumerOffset.getOffset(eventTypePartition)).isNull();
 
@@ -90,7 +90,7 @@ public class ZKConsumerSyncOffsetManagementInvalidCursorsTest extends AbstractZK
 
         zkConsumerSyncOffsetManagement.error(412,
             "{\"type\":\"http://httpstatus.es/412\",\"title\":\"Precondition Failed\",\"status\":412,\"detail\":\"offset must not be null\"}",
-            EventTypePartition.of(EventType.of(TEST_EVENT), TEST_PARTITION));
+            eventTypePartition);
 
         assertThat(consumerOffset.getOffset(eventTypePartition)).isEqualTo("123");
     }
