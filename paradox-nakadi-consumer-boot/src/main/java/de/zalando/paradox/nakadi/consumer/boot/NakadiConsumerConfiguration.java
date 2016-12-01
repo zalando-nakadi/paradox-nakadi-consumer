@@ -149,12 +149,9 @@ public class NakadiConsumerConfiguration {
             consumerName -> {
             final SimplePartitionCoordinator coordinator = new SimplePartitionCoordinator(
                     eventErrorHandlerList.getEventErrorHandlerList());
-            final Boolean value = nakadiConsumerProperties.getStartNewestAvailableOffset();
-            if (null != value) {
 
-                // use false only for development as messages will be replayed on each restart
-                coordinator.setStartNewestAvailableOffset(value);
-            }
+            // use false only for development as messages will be replayed on each restart
+            coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.isStartNewestAvailableOffset());
 
             return coordinator;
         };
@@ -168,10 +165,9 @@ public class NakadiConsumerConfiguration {
             consumerName -> {
             final ZKLeaderConsumerPartitionCoordinator coordinator = new ZKLeaderConsumerPartitionCoordinator(zkHolder,
                     consumerName, eventErrorHandlerList.getEventErrorHandlerList());
-            final Boolean value = nakadiConsumerProperties.getStartNewestAvailableOffset();
-            if (null != value) {
-                coordinator.setStartNewestAvailableOffset(value);
-            }
+
+            coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.isStartNewestAvailableOffset());
+            coordinator.setDeleteUnavailableCursors(nakadiConsumerProperties.isDeleteUnavailableCursors());
 
             return coordinator;
         };
@@ -192,10 +188,9 @@ public class NakadiConsumerConfiguration {
             consumerName -> {
             final ZKSimpleConsumerPartitionCoordinator coordinator = new ZKSimpleConsumerPartitionCoordinator(zkHolder,
                     consumerName, eventErrorHandlerList.getEventErrorHandlerList());
-            final Boolean value = nakadiConsumerProperties.getStartNewestAvailableOffset();
-            if (null != value) {
-                coordinator.setStartNewestAvailableOffset(value);
-            }
+
+            coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.isStartNewestAvailableOffset());
+            coordinator.setDeleteUnavailableCursors(nakadiConsumerProperties.isDeleteUnavailableCursors());
 
             return coordinator;
         };
