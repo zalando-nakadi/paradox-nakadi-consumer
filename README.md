@@ -405,7 +405,7 @@ public interface EventErrorHandler {
 }
 ```
 
-Each project should specify what they are going to do with the failed events. They can be logged to the database, log files, elastic search etc.
+Each project should specify what to do with the failed events. They can be logged to the database, log files, elastic search etc.
 
 The example usage can be found below.
 
