@@ -48,11 +48,6 @@ public class LocalTestHandlers {
             LOGGER.info("### cursor {}", cursor);
             LOGGER.info("### event  {}", object);
         }
-
-        @Override
-        public Class<OrderReceived> getEventClass() {
-            return OrderReceived.class;
-        }
     }
 
     @Bean
@@ -69,11 +64,6 @@ public class LocalTestHandlers {
             LOGGER.info("### cursor {}", cursor);
             LOGGER.info("### events {} / {}", events.size(), events);
         }
-
-        @Override
-        public Class<OrderReceived> getEventClass() {
-            return OrderReceived.class;
-        }
     }
 
     @Bean
@@ -88,11 +78,6 @@ public class LocalTestHandlers {
             public void onEvent(final EventTypeCursor cursor, final List<OrderReceived> events) {
                 LOGGER.info("### cursor {}", cursor);
                 LOGGER.info("### events {} / {}", events.size(), events);
-            }
-
-            @Override
-            public Class<OrderReceived> getEventClass() {
-                return OrderReceived.class;
             }
         };
     }
