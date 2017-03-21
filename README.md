@@ -384,7 +384,46 @@ As single exception should not stop the whole stream processing, `java.lang.Exce
 is suppressed and logged only . If required, a method implementor should take care of replaying separate failed events from the stream.
 If Zookeeper Partition Coordinator is used, `java.lang.Error` and any subclass of
 `de.zalando.paradox.nakadi.consumer.core.exceptions.UnrecoverableException` will disconnect the the topic-partition processor
-from the Nakadi server and resume from the last committed offset.
+from the Nakadi server and resume from the last committed offset. 
+
+There is also EventErrorHandler interface. Initially there is no implementation for this interface.
+
+```java
+@FunctionalInterface
+public interface EventErrorHandler {
+
+    /**
+     * This callback method will be called when an exception occurred. The Exception can be many things such as a broken
+     * event, unparsable event body, database connection timeout etc.
+     *
+     * @param  t                   Thrown exception itself
+     * @param  eventTypePartition  EventTypePartition contains eventType and partition information
+     * @param  offset              Current offset
+     * @param  rawEvent            Raw event body itself
+     */
+    void onError(Throwable t, EventTypePartition eventTypePartition, @Nullable String offset, String rawEvent);
+}
+```
+
+Each project should specify what to do with the failed events. They can be logged to the database, log files, elastic search etc.
+
+The example usage can be found below.
+
+```java
+@Service
+public class LoggingEventErrorHandler implements EventErrorHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingEventErrorHandler.class);
+
+    @Override
+    public void onError(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String offset,
+            final String rawEvent) {
+        LOGGER.error(
+            "Failed Event // Event Partition = [{}] , Event Type = [{}] , Event Offset = [{}] , Raw Event = [{}] //",
+            eventTypePartition.getPartition(), eventTypePartition.getEventType(), offset, rawEvent, t);
+    }
+}
+```
 
 ### Spring boot support endpoints
 

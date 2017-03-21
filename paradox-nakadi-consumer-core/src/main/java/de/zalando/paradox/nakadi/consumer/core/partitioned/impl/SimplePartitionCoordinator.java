@@ -3,6 +3,8 @@ package de.zalando.paradox.nakadi.consumer.core.partitioned.impl;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -13,16 +15,25 @@ import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartitions;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiPartition;
+import de.zalando.paradox.nakadi.consumer.core.http.handlers.EventErrorHandler;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionCommitCallback;
 import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 
 public class SimplePartitionCoordinator extends AbstractPartitionCoordinator {
 
     private final AtomicBoolean running = new AtomicBoolean(true);
+
     private boolean startNewestAvailableOffset = true;
 
+    private final List<EventErrorHandler> eventErrorHandlerList;
+
     public SimplePartitionCoordinator() {
+        this(Collections.emptyList());
+    }
+
+    public SimplePartitionCoordinator(final List<EventErrorHandler> eventErrorHandlers) {
         super(LoggerFactory.getLogger(SimplePartitionCoordinator.class));
+        this.eventErrorHandlerList = eventErrorHandlers;
     }
 
     @Override
@@ -90,13 +101,17 @@ public class SimplePartitionCoordinator extends AbstractPartitionCoordinator {
     }
 
     @Override
-    public void error(final Throwable t, final EventTypePartition eventTypePartition) {
+    public void error(final Throwable t, final EventTypePartition eventTypePartition, final String cursor,
+            final String rawEvent) {
 
         // it will unsubscribe reactive receiver
         if (ThrowableUtils.isUnrecoverableException(t)) {
             log.error("Error [{}] reason [{}]", eventTypePartition, getMessage(t));
             ThrowableUtils.throwException(t);
         } else {
+
+            eventErrorHandlerList.forEach(eventErrorHandler ->
+                    eventErrorHandler.onError(t, eventTypePartition, cursor, rawEvent));
             log.error("Error [{}] reason [{}]", eventTypePartition, getMessage(t), t);
         }
     }

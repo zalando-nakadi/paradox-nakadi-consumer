@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
@@ -117,9 +116,9 @@ public class ClientImpl implements Client {
     }
 
     private String getEvent0(final String content) {
-        final Optional<NakadiEventBatch<String>> events = EventUtils.getRawEventBatch(objectMapper, content);
-        checkArgument(events.isPresent());
-        return Iterables.getOnlyElement(events.get().getEvents());
+        final NakadiEventBatch<String> events = EventUtils.getRawEventBatch(objectMapper, content);
+        checkArgument(events != null);
+        return Iterables.getOnlyElement(events.getEvents());
     }
 
     public static class Builder {

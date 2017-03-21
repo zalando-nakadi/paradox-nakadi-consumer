@@ -1,7 +1,5 @@
 package de.zalando.paradox.nakadi.consumer.core.http.handlers;
 
-import java.util.Optional;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -17,7 +15,7 @@ public class JsonEventResponseBulkHandler extends AbstractEventsResponseBulkHand
     }
 
     @Override
-    Optional<NakadiEventBatch<JsonNode>> getEventBatch(final String string) {
+    NakadiEventBatch<JsonNode> getEventBatch(final String string) {
         return EventUtils.getJsonEventBatch(jsonMapper, string);
     }
 }

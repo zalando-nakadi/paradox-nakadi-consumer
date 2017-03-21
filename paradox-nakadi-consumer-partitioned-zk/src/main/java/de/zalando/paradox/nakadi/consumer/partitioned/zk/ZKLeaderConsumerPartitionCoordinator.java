@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,6 +22,7 @@ import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartitions;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiPartition;
+import de.zalando.paradox.nakadi.consumer.core.http.handlers.EventErrorHandler;
 import de.zalando.paradox.nakadi.consumer.core.utils.LoggingUtils;
 import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 
@@ -87,8 +89,10 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
         };
     }
 
-    public ZKLeaderConsumerPartitionCoordinator(final ZKHolder zkHolder, final String consumerName) {
-        super(LoggingUtils.getLogger(ZKLeaderConsumerPartitionCoordinator.class, consumerName), zkHolder, consumerName);
+    public ZKLeaderConsumerPartitionCoordinator(final ZKHolder zkHolder, final String consumerName,
+            final List<EventErrorHandler> eventErrorHandlers) {
+        super(LoggingUtils.getLogger(ZKLeaderConsumerPartitionCoordinator.class, consumerName), zkHolder, consumerName,
+            eventErrorHandlers);
         this.member = ZKMember.of(UUID.randomUUID().toString());
         this.consumerGroupMember = new ZKConsumerGroupMember(zkHolder, consumerName, member);
         this.rebalancer = new ZKLeaderConsumerPartitionRebalanceStrategy(member);
@@ -98,8 +102,9 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
     @VisibleForTesting
     ZKLeaderConsumerPartitionCoordinator(final ZKHolder zkHolder, final String consumerName, final ZKMember member,
             final ZKConsumerGroupMember consumerGroupMember, final ConsumerPartitionRebalanceStrategy rebalancer,
-            final ZKConsumerPartitionLeader consumerPartitionLeader) {
-        super(LoggingUtils.getLogger(ZKLeaderConsumerPartitionCoordinator.class, consumerName), zkHolder, consumerName);
+            final ZKConsumerPartitionLeader consumerPartitionLeader, final List<EventErrorHandler> eventErrorHandlers) {
+        super(LoggingUtils.getLogger(ZKLeaderConsumerPartitionCoordinator.class, consumerName), zkHolder, consumerName,
+            eventErrorHandlers);
         this.member = requireNonNull(member);
         this.consumerGroupMember = requireNonNull(consumerGroupMember);
         this.rebalancer = requireNonNull(rebalancer);
@@ -160,9 +165,8 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
     }
 
     private void joinGroup(final EventType eventType) {
-        ZKGroupMember groupMember = groupMembers.get(eventType);
-        if (null == groupMember) {
-            groupMember = consumerGroupMember.newGroupMember(eventType, newGroupChangedListener());
+        if (!groupMembers.containsKey(eventType)) {
+            final ZKGroupMember groupMember = consumerGroupMember.newGroupMember(eventType, newGroupChangedListener());
             if (null == groupMembers.putIfAbsent(eventType, groupMember)) {
                 try {
                     log.info("Member [{}] is joining group for event type [{}] ", member.getMemberId(), eventType);

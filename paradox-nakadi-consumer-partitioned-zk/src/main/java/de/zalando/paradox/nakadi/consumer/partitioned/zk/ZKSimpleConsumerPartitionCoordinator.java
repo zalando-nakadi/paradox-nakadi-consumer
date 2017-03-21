@@ -1,18 +1,22 @@
 package de.zalando.paradox.nakadi.consumer.partitioned.zk;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartitions;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiPartition;
+import de.zalando.paradox.nakadi.consumer.core.http.handlers.EventErrorHandler;
 import de.zalando.paradox.nakadi.consumer.core.utils.LoggingUtils;
 
 public class ZKSimpleConsumerPartitionCoordinator extends AbstractZKConsumerPartitionCoordinator {
 
     private final AtomicBoolean running = new AtomicBoolean(true);
 
-    public ZKSimpleConsumerPartitionCoordinator(final ZKHolder zkHolder, final String consumerName) {
-        super(LoggingUtils.getLogger(ZKLeaderConsumerPartitionCoordinator.class, consumerName), zkHolder, consumerName);
+    public ZKSimpleConsumerPartitionCoordinator(final ZKHolder zkHolder, final String consumerName,
+            final List<EventErrorHandler> eventErrorHandlerList) {
+        super(LoggingUtils.getLogger(ZKLeaderConsumerPartitionCoordinator.class, consumerName), zkHolder, consumerName,
+            eventErrorHandlerList);
     }
 
     @Override

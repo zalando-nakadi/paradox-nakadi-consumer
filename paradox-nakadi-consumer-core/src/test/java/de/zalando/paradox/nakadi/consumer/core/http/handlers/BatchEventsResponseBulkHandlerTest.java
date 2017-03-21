@@ -100,11 +100,7 @@ public class BatchEventsResponseBulkHandlerTest {
     public void testKeepAlive() {
         handler.onResponse(KEEP_ALIVE_EVENT);
         verify(delegate, times(0)).onEvent(any(), any());
-
-        final ArgumentCaptor<EventTypeCursor> coordinatorCursorCaptor = ArgumentCaptor.forClass(EventTypeCursor.class);
-        verify(coordinator, times(1)).commit(coordinatorCursorCaptor.capture());
-        assertThat(coordinatorCursorCaptor.getValue()).extracting("eventTypePartition", "offset").containsExactly(
-            EVENT_TYPE_PARTITION, "9");
+        verify(coordinator, times(0)).commit(any(EventTypeCursor.class));
     }
 
     @Test
@@ -114,8 +110,8 @@ public class BatchEventsResponseBulkHandlerTest {
         handler.onResponse(ONE_EVENT);
 
         verify(delegate, times(1)).onEvent(any(), any());
-        verify(coordinator, times(0)).commit(any());
-        verify(coordinator, times(1)).error(any(), any());
+        verify(coordinator, times(1)).commit(any());
+        verify(coordinator, times(1)).error(any(), any(), any(), any());
     }
 
 }
