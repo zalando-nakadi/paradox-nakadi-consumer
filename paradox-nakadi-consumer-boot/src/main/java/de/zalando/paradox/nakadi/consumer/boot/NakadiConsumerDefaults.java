@@ -1,10 +1,6 @@
 package de.zalando.paradox.nakadi.consumer.boot;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
-@ConfigurationProperties(NakadiConsumerProperties.PREFIX)
-public class NakadiConsumerProperties {
-    static final String PREFIX = "paradox.nakadi.consumer";
+public class NakadiConsumerDefaults {
 
     private String zookeeperBrokers;
 

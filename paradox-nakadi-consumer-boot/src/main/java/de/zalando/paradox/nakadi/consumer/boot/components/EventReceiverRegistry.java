@@ -126,8 +126,8 @@ public class EventReceiverRegistry {
 
         //J-
         builder.withEventStreamConfig(EventStreamConfig.Builder.of().
-                withBatchLimit(config.getEventsBatchLimit()).
-                withBatchTimeoutSeconds(config.getEventsBatchTimeoutSeconds()).
+                withBatchLimit(config.getEventsBatchLimit(consumerName)).
+                withBatchTimeoutSeconds(config.getEventsBatchTimeoutSeconds(consumerName)).
                 withStreamLimit(config.getEventsStreamLimit()).
                 withStreamTimeoutSeconds(config.getEventsStreamTimeoutSeconds()).
                 withStreamKeepAliveLimit(config.getEventsStreamKeepAliveLimit()).build());

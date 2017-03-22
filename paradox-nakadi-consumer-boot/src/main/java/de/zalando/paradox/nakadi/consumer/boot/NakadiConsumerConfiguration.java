@@ -7,8 +7,6 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
-import static de.zalando.paradox.nakadi.consumer.boot.NakadiConsumerProperties.PREFIX;
-
 import java.lang.reflect.Method;
 
 import java.util.Collection;
@@ -25,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -58,8 +55,9 @@ import de.zalando.paradox.nakadi.consumer.partitioned.zk.ZKSimpleConsumerPartiti
 
 @Configuration
 @AutoConfigureAfter(AccessTokensBeanAutoConfiguration.class)
-@EnableConfigurationProperties(NakadiConsumerProperties.class)
 public class NakadiConsumerConfiguration {
+
+    private static final String DEFAULT_PROPERTIES_PREFIX = "paradox.nakadi.defaults";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NakadiConsumerConfiguration.class);
 
@@ -67,7 +65,7 @@ public class NakadiConsumerConfiguration {
     private ApplicationContext applicationContext;
 
     @Autowired
-    private NakadiConsumerProperties nakadiConsumerProperties;
+    private NakadiSettings nakadiConsumerProperties;
 
     @Bean
     public ConsumerEventConfigList consumerEventConfigList() {
@@ -127,12 +125,12 @@ public class NakadiConsumerConfiguration {
         final String eventConsumerName;
         if (consumerNamePostfix) {
             checkArgument(isNotEmpty(consumerName), "consumerName for postfix 'true' attribute must not be empty");
-            checkArgument(isNotEmpty(nakadiConsumerProperties.getDefaultConsumerName()),
+            checkArgument(isNotEmpty(nakadiConsumerProperties.getDefaults().getDefaultConsumerName()),
                 "defaultConsumerName for postfix 'true' attribute must not be empty");
-            eventConsumerName = nakadiConsumerProperties.getDefaultConsumerName() + "-" + consumerName;
+            eventConsumerName = nakadiConsumerProperties.getDefaults().getDefaultConsumerName() + "-" + consumerName;
         } else {
-            eventConsumerName = isNotEmpty(consumerName) ? consumerName
-                                                         : nakadiConsumerProperties.getDefaultConsumerName();
+            eventConsumerName = isNotEmpty(consumerName)
+                ? consumerName : nakadiConsumerProperties.getDefaults().getDefaultConsumerName();
         }
 
         checkArgument(isNotEmpty(eventConsumerName), "consumerName must not be empty");
@@ -141,7 +139,8 @@ public class NakadiConsumerConfiguration {
 
     @Bean
     @ConditionalOnProperty(
-        value = "partitionCoordinatorProvider", prefix = PREFIX, matchIfMissing = true, havingValue = "simple"
+        value = "partitionCoordinatorProvider", prefix = DEFAULT_PROPERTIES_PREFIX, matchIfMissing = true,
+        havingValue = "simple"
     )
     public ConsumerPartitionCoordinatorProvider simplePartitionCoordinatorProvider(
             final EventErrorHandlerList eventErrorHandlerList) {
@@ -151,14 +150,17 @@ public class NakadiConsumerConfiguration {
                     eventErrorHandlerList.getEventErrorHandlerList());
 
             // use false only for development as messages will be replayed on each restart
-            coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.isStartNewestAvailableOffset());
+            coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.getDefaults()
+                    .isStartNewestAvailableOffset());
 
             return coordinator;
         };
     }
 
     @Bean
-    @ConditionalOnProperty(value = "partitionCoordinatorProvider", prefix = PREFIX, havingValue = "zk")
+    @ConditionalOnProperty(
+        value = "partitionCoordinatorProvider", prefix = DEFAULT_PROPERTIES_PREFIX, havingValue = "zk"
+    )
     public ConsumerPartitionCoordinatorProvider leaderConsumerPartitionCoordinator(final ZKHolder zkHolder,
             final EventErrorHandlerList eventErrorHandlerList) {
         return
@@ -166,22 +168,29 @@ public class NakadiConsumerConfiguration {
             final ZKLeaderConsumerPartitionCoordinator coordinator = new ZKLeaderConsumerPartitionCoordinator(zkHolder,
                     consumerName, eventErrorHandlerList.getEventErrorHandlerList());
 
-            coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.isStartNewestAvailableOffset());
-            coordinator.setDeleteUnavailableCursors(nakadiConsumerProperties.isDeleteUnavailableCursors());
+            coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.getDefaults()
+                    .isStartNewestAvailableOffset());
+            coordinator.setDeleteUnavailableCursors(nakadiConsumerProperties.getDefaults()
+                    .isDeleteUnavailableCursors());
 
             return coordinator;
         };
     }
 
     @Bean(initMethod = "init")
-    @ConditionalOnProperty(value = "partitionCoordinatorProvider", prefix = PREFIX, havingValue = "zk")
+    @ConditionalOnProperty(
+        value = "partitionCoordinatorProvider", prefix = DEFAULT_PROPERTIES_PREFIX, havingValue = "zk"
+    )
     public ZKHolder zkHolder() {
-        return new ZKHolder(nakadiConsumerProperties.getZookeeperBrokers(),
-                nakadiConsumerProperties.getExhibitorAddresses(), nakadiConsumerProperties.getExhibitorPort());
+        return new ZKHolder(nakadiConsumerProperties.getDefaults().getZookeeperBrokers(),
+                nakadiConsumerProperties.getDefaults().getExhibitorAddresses(),
+                nakadiConsumerProperties.getDefaults().getExhibitorPort());
     }
 
     @Bean
-    @ConditionalOnProperty(value = "partitionCoordinatorProvider", prefix = PREFIX, havingValue = "zk-simple")
+    @ConditionalOnProperty(
+        value = "partitionCoordinatorProvider", prefix = DEFAULT_PROPERTIES_PREFIX, havingValue = "zk-simple"
+    )
     public ConsumerPartitionCoordinatorProvider simpleConsumerPartitionCoordinator(final ZKHolder zkHolder,
             final EventErrorHandlerList eventErrorHandlerList) {
         return
@@ -189,24 +198,31 @@ public class NakadiConsumerConfiguration {
             final ZKSimpleConsumerPartitionCoordinator coordinator = new ZKSimpleConsumerPartitionCoordinator(zkHolder,
                     consumerName, eventErrorHandlerList.getEventErrorHandlerList());
 
-            coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.isStartNewestAvailableOffset());
-            coordinator.setDeleteUnavailableCursors(nakadiConsumerProperties.isDeleteUnavailableCursors());
+            coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.getDefaults()
+                    .isStartNewestAvailableOffset());
+            coordinator.setDeleteUnavailableCursors(nakadiConsumerProperties.getDefaults()
+                    .isDeleteUnavailableCursors());
 
             return coordinator;
         };
     }
 
     @Bean(initMethod = "init")
-    @ConditionalOnProperty(value = "partitionCoordinatorProvider", prefix = PREFIX, havingValue = "zk-simple")
+    @ConditionalOnProperty(
+        value = "partitionCoordinatorProvider", prefix = DEFAULT_PROPERTIES_PREFIX, havingValue = "zk-simple"
+    )
     public ZKHolder simpleZKHolder() {
-        return new ZKHolder(nakadiConsumerProperties.getZookeeperBrokers(),
-                nakadiConsumerProperties.getExhibitorAddresses(), nakadiConsumerProperties.getExhibitorPort());
+        return new ZKHolder(nakadiConsumerProperties.getDefaults().getZookeeperBrokers(),
+                nakadiConsumerProperties.getDefaults().getExhibitorAddresses(),
+                nakadiConsumerProperties.getDefaults().getExhibitorPort());
     }
 
     @Bean
-    @ConditionalOnProperty(value = "oauth2Enabled", prefix = PREFIX, matchIfMissing = true, havingValue = "true")
+    @ConditionalOnProperty(
+        value = "oauth2Enabled", prefix = DEFAULT_PROPERTIES_PREFIX, matchIfMissing = true, havingValue = "true"
+    )
     public AuthorizationValueProvider oauth2AccessTokenProvider(final AccessTokens accessTokens) {
-        final String tokenId = nakadiConsumerProperties.getNakadiTokenId();
+        final String tokenId = nakadiConsumerProperties.getDefaults().getNakadiTokenId();
         final AccessTokenProvider accessTokenProvider = new StupsTokensAccessTokenProvider(tokenId, accessTokens);
         return
             () -> {

@@ -1,9 +1,9 @@
 package de.zalando.paradox.nakadi.consumer.boot;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,11 +16,10 @@ import de.zalando.paradox.nakadi.consumer.boot.components.EventReceiverRegistry;
 import de.zalando.paradox.nakadi.consumer.core.AuthorizationValueProvider;
 
 @Configuration
-@EnableConfigurationProperties(NakadiConsumerProperties.class)
 public class EventReceiverRegistryConfiguration {
 
     @Autowired
-    private NakadiConsumerProperties nakadiConsumerProperties;
+    private NakadiSettings nakadiSettings;
 
     @Autowired
     private ConsumerPartitionCoordinatorProvider coordinatorProvider;
@@ -35,6 +34,11 @@ public class EventReceiverRegistryConfiguration {
     @Qualifier("nakadiObjectMapper")
     private ObjectMapper objectMapper;
 
+    @Bean
+    public EventReceiverRegistry eventReceiverRegistry(final EventReceiverRegistryConfiguration eventReceiverConfig) {
+        return new EventReceiverRegistry(eventReceiverConfig, objectMapper);
+    }
+
     public ConsumerPartitionCoordinatorProvider getCoordinatorProvider() {
         return coordinatorProvider;
     }
@@ -48,60 +52,75 @@ public class EventReceiverRegistryConfiguration {
     }
 
     public String getNakadiUrl() {
-        return nakadiConsumerProperties.getNakadiUrl();
+        return nakadiSettings.getDefaults().getNakadiUrl();
     }
 
     public boolean isEventTypePartitionCoordinator() {
-        return nakadiConsumerProperties.isEventTypePartitionCoordinator();
+        return nakadiSettings.getDefaults().isEventTypePartitionCoordinator();
     }
 
     public Long getPartitionsRetryAfterMillis() {
-        return nakadiConsumerProperties.getPartitionsRetryAfterMillis();
+        return nakadiSettings.getDefaults().getPartitionsRetryAfterMillis();
     }
 
     public Long getPartitionsRetryRandomMillis() {
-        return nakadiConsumerProperties.getPartitionsRetryRandomMillis();
+        return nakadiSettings.getDefaults().getPartitionsRetryRandomMillis();
     }
 
     public Long getPartitionsTimeoutMillis() {
-        return nakadiConsumerProperties.getPartitionsTimeoutMillis();
+        return nakadiSettings.getDefaults().getPartitionsTimeoutMillis();
     }
 
     public Long getEventsTimeoutMillis() {
-        return nakadiConsumerProperties.getEventsTimeoutMillis();
+        return nakadiSettings.getDefaults().getEventsTimeoutMillis();
     }
 
     public Long getEventsRetryAfterMillis() {
-        return nakadiConsumerProperties.getEventsRetryAfterMillis();
+        return nakadiSettings.getDefaults().getEventsRetryAfterMillis();
     }
 
     public Long getEventsRetryRandomMillis() {
-        return nakadiConsumerProperties.getEventsRetryRandomMillis();
+        return nakadiSettings.getDefaults().getEventsRetryRandomMillis();
     }
 
     public Integer getEventsStreamTimeoutSeconds() {
-        return nakadiConsumerProperties.getEventsStreamTimeoutSeconds();
+        return nakadiSettings.getDefaults().getEventsStreamTimeoutSeconds();
     }
 
     public Integer getEventsBatchTimeoutSeconds() {
-        return nakadiConsumerProperties.getEventsBatchTimeoutSeconds();
+        return nakadiSettings.getDefaults().getEventsBatchTimeoutSeconds();
+    }
+
+    public Integer getEventsBatchTimeoutSeconds(final String consumer) {
+        final NakadiConsumerSettings consumerProperties = nakadiSettings.getConsumers().get(consumer);
+        if (consumerProperties != null) {
+            return firstNonNull(consumerProperties.getEventsBatchTimeoutSeconds(),
+                    nakadiSettings.getDefaults().getEventsBatchTimeoutSeconds());
+        } else {
+            return nakadiSettings.getDefaults().getEventsBatchTimeoutSeconds();
+        }
     }
 
     public Integer getEventsStreamLimit() {
-        return nakadiConsumerProperties.getEventsStreamLimit();
+        return nakadiSettings.getDefaults().getEventsStreamLimit();
     }
 
     public Integer getEventsStreamKeepAliveLimit() {
-        return nakadiConsumerProperties.getEventsStreamKeepAliveLimit();
+        return nakadiSettings.getDefaults().getEventsStreamKeepAliveLimit();
     }
 
     public Integer getEventsBatchLimit() {
-        return nakadiConsumerProperties.getEventsBatchLimit();
+        return nakadiSettings.getDefaults().getEventsBatchLimit();
     }
 
-    @Bean
-    public EventReceiverRegistry eventReceiverRegistry(final EventReceiverRegistryConfiguration eventReceiverConfig) {
-        return new EventReceiverRegistry(eventReceiverConfig, objectMapper);
+    public Integer getEventsBatchLimit(final String consumer) {
+        final NakadiConsumerSettings consumerProperties = nakadiSettings.getConsumers().get(consumer);
+        if (consumerProperties != null) {
+            return firstNonNull(consumerProperties.getEventsBatchLimit(),
+                    nakadiSettings.getDefaults().getEventsBatchLimit());
+        } else {
+            return nakadiSettings.getDefaults().getEventsBatchLimit();
+        }
     }
 
 }
