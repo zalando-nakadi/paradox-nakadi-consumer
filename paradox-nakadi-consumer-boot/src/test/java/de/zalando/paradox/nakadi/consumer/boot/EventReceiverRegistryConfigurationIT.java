@@ -42,6 +42,12 @@ public class EventReceiverRegistryConfigurationIT {
     }
 
     @Test
+    public void testShouldFallbackToDefaultEventsBatchLimit() {
+        final Integer eventsBatchLimit = eventReceiverRegistryConfiguration.getEventsBatchLimit("consumerUsingDefault");
+        assertThat(eventsBatchLimit).isEqualTo(100);
+    }
+
+    @Test
     public void testShouldPreferConsumerEventsBatchTimeoutSeconds() {
         final Integer eventsBatchLimit = eventReceiverRegistryConfiguration.getEventsBatchTimeoutSeconds(
                 "testConsumer");
