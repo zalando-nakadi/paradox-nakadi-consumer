@@ -15,7 +15,7 @@ public class NakadiSettingsConfiguration implements EnvironmentAware {
     private ConfigurableEnvironment environment;
 
     @Bean
-    public NakadiSettings nakadiConsumerSettings() {
+    public NakadiSettings nakadiSettings() {
         final PropertiesConfigurationFactory<NakadiSettings> propertiesConfigurationFactory =
             new PropertiesConfigurationFactory<>(NakadiSettings.class);
         propertiesConfigurationFactory.setConversionService(environment.getConversionService());
