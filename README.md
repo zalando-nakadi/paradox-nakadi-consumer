@@ -31,8 +31,6 @@ Java high level [Nakadi](https://github.com/zalando/nakadi) consumer.
 
     gradlew clean
     gradlew build
-
-
     gradlew install
 
 
@@ -63,17 +61,23 @@ Offset tracking and topic partition leader election is done pro consumer group n
 ```yaml
 paradox:
   nakadi:
-    consumer:
+    defaults:
       nakadiUrl: https://nakadi.example.com
       nakadiTokenId: nakadi-event-stream-read
       zookeeperBrokers: exhibitor.example.com:2181
-      defaultConsumerName: your consumer group name
+      defaultConsumerName: yourConsumerGroupName
       oauth2Enabled : true
       partitionCoordinatorProvider: zk
       exhibitorAddresses: exhibitor.example.com
       exhibitorPort: 8181
       eventsStreamTimeoutSeconds: 900
       eventsBatchLimit: 1
+
+    # batch settings can be overriden per consumer
+    consumers:
+      yourConsumerGroupName-handlerSuffix:
+        eventsBatchLimit: 100
+        eventsBatchTimeoutSeconds: 3
 
 tokens:
   enableMock: false

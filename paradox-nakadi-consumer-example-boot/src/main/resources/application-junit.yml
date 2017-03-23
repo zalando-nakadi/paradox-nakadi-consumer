@@ -7,7 +7,7 @@ server:
 
 paradox:
   nakadi:
-    consumer:
+    defaults:
       nakadiUrl: http://localhost:8080
       partitionCoordinatorProvider: simple
 

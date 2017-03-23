@@ -3,8 +3,6 @@ package de.zalando.paradox.nakadi.consumer.boot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,10 +13,10 @@ import de.zalando.paradox.nakadi.consumer.core.client.Client;
 import de.zalando.paradox.nakadi.consumer.core.client.impl.ClientImpl;
 
 @Configuration
-@EnableConfigurationProperties(NakadiConsumerProperties.class)
 public class ClientConfiguration {
+
     @Autowired
-    private NakadiConsumerProperties nakadiConsumerProperties;
+    private NakadiSettings nakadiSettings;
 
     @Autowired(required = false)
     private AuthorizationValueProvider authorizationValueProvider;
@@ -29,7 +27,7 @@ public class ClientConfiguration {
 
     @Bean
     public Client nakadiClient(final EventReceiverRegistryConfiguration eventReceiverConfig) {
-        final ClientImpl.Builder builder = new ClientImpl.Builder(nakadiConsumerProperties.getNakadiUrl());
+        final ClientImpl.Builder builder = new ClientImpl.Builder(nakadiSettings.getDefaults().getNakadiUrl());
         if (null != authorizationValueProvider) {
             builder.withAuthorization(authorizationValueProvider);
         }

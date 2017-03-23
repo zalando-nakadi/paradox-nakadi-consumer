@@ -7,7 +7,7 @@ server:
 
 paradox:
   nakadi:
-    consumer:
+    defaults:
       nakadiUrl: http://localhost:8080
       nakadiTokenId: nakadi-event-stream-read
       zookeeperBrokers: 127.0.0.1:2181
