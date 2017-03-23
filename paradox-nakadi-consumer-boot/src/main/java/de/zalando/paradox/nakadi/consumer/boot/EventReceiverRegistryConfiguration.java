@@ -18,6 +18,8 @@ import de.zalando.paradox.nakadi.consumer.core.AuthorizationValueProvider;
 @Configuration
 public class EventReceiverRegistryConfiguration {
 
+    private static final NakadiConsumerSettings EMPTY_CONSUMER_SETTINGS = new NakadiConsumerSettings();
+
     @Autowired
     private NakadiSettings nakadiSettings;
 
@@ -92,13 +94,8 @@ public class EventReceiverRegistryConfiguration {
     }
 
     public Integer getEventsBatchTimeoutSeconds(final String consumer) {
-        final NakadiConsumerSettings consumerProperties = nakadiSettings.getConsumers().get(consumer);
-        if (consumerProperties != null) {
-            return firstNonNull(consumerProperties.getEventsBatchTimeoutSeconds(),
-                    nakadiSettings.getDefaults().getEventsBatchTimeoutSeconds());
-        } else {
-            return nakadiSettings.getDefaults().getEventsBatchTimeoutSeconds();
-        }
+        return firstNonNull(getConsumerSetting(consumer).getEventsBatchTimeoutSeconds(),
+                nakadiSettings.getDefaults().getEventsBatchTimeoutSeconds());
     }
 
     public Integer getEventsStreamLimit() {
@@ -114,13 +111,12 @@ public class EventReceiverRegistryConfiguration {
     }
 
     public Integer getEventsBatchLimit(final String consumer) {
-        final NakadiConsumerSettings consumerProperties = nakadiSettings.getConsumers().get(consumer);
-        if (consumerProperties != null) {
-            return firstNonNull(consumerProperties.getEventsBatchLimit(),
-                    nakadiSettings.getDefaults().getEventsBatchLimit());
-        } else {
-            return nakadiSettings.getDefaults().getEventsBatchLimit();
-        }
+        return firstNonNull(getConsumerSetting(consumer).getEventsBatchLimit(),
+                nakadiSettings.getDefaults().getEventsBatchLimit());
+    }
+
+    private NakadiConsumerSettings getConsumerSetting(final String consumer) {
+        return nakadiSettings.getConsumers().getOrDefault(consumer, EMPTY_CONSUMER_SETTINGS);
     }
 
 }
