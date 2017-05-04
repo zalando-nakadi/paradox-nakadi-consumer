@@ -1,5 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.core.client.impl;
 
+import static java.lang.String.format;
+
 import static java.util.Objects.requireNonNull;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -121,7 +123,7 @@ public class ClientImpl implements Client {
         return Single.<List<NakadiPartition>>fromCallable(() -> {
                 final EventType eventType = cursors.get(0).getEventType();
                 final HttpUrl httpUrl = HttpUrl.parse(nakadiUrl).newBuilder().addPathSegment("event-types")
-                        .addPathSegment(eventType.getName()).addPathSegment("cursors-lags").build();
+                        .addPathSegment(eventType.getName()).addPathSegment("cursors-lag").build();
                 final Request request = new Request.Builder().url(httpUrl).post(
                         RequestBody.create(CONTENT_TYPE, //
                             getNakadiCursors(cursors))) //
@@ -130,7 +132,8 @@ public class ClientImpl implements Client {
                 if (response.isSuccessful()) {
                     return objectMapper.readValue(response.body().byteStream(), NAKADI_PARTITIONS_TYPE);
                 } else {
-                    throw new RuntimeException(response.body().string());
+                    throw new RuntimeException(
+                        format("Get cursors lag failed for cursors [%s]: [%s]", cursors, response.body().string()));
                 }
             });
     }
@@ -222,7 +225,7 @@ public class ClientImpl implements Client {
             public Response intercept(final Chain chain) throws IOException {
                 if (authorizationValueProvider != null) {
                     return chain.proceed(chain.request().newBuilder().addHeader("Authorization",
-                                "Bearer" + authorizationValueProvider.get()).build());
+                                authorizationValueProvider.get()).build());
                 } else {
                     return chain.proceed(chain.request());
                 }

@@ -21,6 +21,7 @@ import de.zalando.paradox.nakadi.consumer.core.domain.NakadiPartition;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 
 public class ClientImplIT {
 
@@ -34,11 +35,12 @@ public class ClientImplIT {
     public void setUp() throws Exception {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
-        client = new ClientImpl.Builder(mockWebServer.url("/").toString()).withObjectMapper(new ObjectMapper()).build();
+        client = new ClientImpl.Builder(mockWebServer.url("/").toString()).withAuthorization(() -> "test")
+                                                                          .withObjectMapper(new ObjectMapper()).build();
     }
 
     @Test
-    public void testShouldReturnNumberOfUnconsumedEvents() {
+    public void testShouldReturnNumberOfUnconsumedEvents() throws InterruptedException {
         mockWebServer.enqueue(new MockResponse().setBody(
                 "[{\"partition\": \"0\", \"oldest_available_offset\" : \"0\", \"newest_available_offset\": \"838282\", \"unconsumed_events\": 838282}]"));
 
@@ -57,11 +59,22 @@ public class ClientImplIT {
     public void testShouldReturnExceptionIfNumberOfUnconsumedEventsCannotBeFetched() {
         mockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody("expected error"));
         assertThatThrownBy(() -> {
-                                      final List<NakadiPartition> nakadiPartitions = client.getCursorsLag(
-                                              Collections.singletonList(
-                                                  EventTypeCursor.of(EventTypePartition.of(TEST_EVENT_TYPE, "0"),
-                                                      "BEGIN"))).toBlocking().value();
+                                      client.getCursorsLag(
+                                          Collections.singletonList(
+                                              EventTypeCursor.of(EventTypePartition.of(TEST_EVENT_TYPE, "0"), "BEGIN")))
+                                          .toBlocking().value();
                                   }).isInstanceOf(RuntimeException.class).hasMessage("expected error");
     }
 
+    @Test
+    public void testShouldAddAuthorizationHeader() throws InterruptedException {
+        mockWebServer.enqueue(new MockResponse().setBody(
+                "[{\"partition\": \"0\", \"oldest_available_offset\" : \"0\", \"newest_available_offset\": \"838282\", \"unconsumed_events\": 838282}]"));
+
+        client.getCursorsLag(Collections.singletonList(
+                      EventTypeCursor.of(EventTypePartition.of(TEST_EVENT_TYPE, "0"), "BEGIN"))).toBlocking().value();
+
+        final RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getHeader("Authorization")).isEqualTo("test");
+    }
 }
