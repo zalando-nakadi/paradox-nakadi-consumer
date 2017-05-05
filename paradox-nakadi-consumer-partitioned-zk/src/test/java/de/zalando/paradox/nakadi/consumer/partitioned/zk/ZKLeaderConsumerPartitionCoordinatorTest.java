@@ -43,7 +43,7 @@ public class ZKLeaderConsumerPartitionCoordinatorTest extends AbstractZKTest {
         final String memberId = "member-1";
 
         final String partition = "0";
-        final NakadiPartition nakadiPartition = new NakadiPartition(partition, "BEGIN", "0");
+        final NakadiPartition nakadiPartition = new NakadiPartition(partition, "BEGIN", "0", 0L);
         final Collection<NakadiPartition> nakadiPartitions = Collections.singleton(nakadiPartition);
         final EventTypePartitions consumerPartitons = new EventTypePartitions(EVENT_TYPE,
                 Collections.singleton(partition));
@@ -74,7 +74,7 @@ public class ZKLeaderConsumerPartitionCoordinatorTest extends AbstractZKTest {
         final String memberId2 = "member-2";
 
         final String partition = "0";
-        final NakadiPartition nakadiPartition = new NakadiPartition(partition, "BEGIN", "0");
+        final NakadiPartition nakadiPartition = new NakadiPartition(partition, "BEGIN", "0", 0L);
         final Collection<NakadiPartition> nakadiPartitions = Collections.singleton(nakadiPartition);
         final EventTypePartitions consumerPartitons = new EventTypePartitions(EVENT_TYPE,
                 Collections.singleton(partition));
