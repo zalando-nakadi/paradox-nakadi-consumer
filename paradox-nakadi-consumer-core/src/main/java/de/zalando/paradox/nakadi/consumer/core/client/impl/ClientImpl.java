@@ -1,8 +1,11 @@
 package de.zalando.paradox.nakadi.consumer.core.client.impl;
 
+import static java.lang.String.format;
+
 import static java.util.Objects.requireNonNull;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 
@@ -10,21 +13,24 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 
 import de.zalando.paradox.nakadi.consumer.core.AuthorizationValueProvider;
-import de.zalando.paradox.nakadi.consumer.core.ConsumerConfig;
 import de.zalando.paradox.nakadi.consumer.core.DefaultObjectMapper;
 import de.zalando.paradox.nakadi.consumer.core.EventStreamConfig;
 import de.zalando.paradox.nakadi.consumer.core.client.Client;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
+import de.zalando.paradox.nakadi.consumer.core.domain.NakadiCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiEventBatch;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiPartition;
 import de.zalando.paradox.nakadi.consumer.core.http.HttpResponseChunk;
@@ -34,10 +40,23 @@ import de.zalando.paradox.nakadi.consumer.core.http.requests.HttpGetEvents;
 import de.zalando.paradox.nakadi.consumer.core.http.requests.HttpGetPartitions;
 import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 
+import okhttp3.HttpUrl;
+import okhttp3.Interceptor;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 import rx.Observable;
 import rx.Single;
 
 public class ClientImpl implements Client {
+
+    private static final TypeReference<List<NakadiPartition>> NAKADI_PARTITIONS_TYPE =
+        new TypeReference<List<NakadiPartition>>() { };
+
+    private static final MediaType CONTENT_TYPE = MediaType.parse("application/json");
 
     private final String nakadiUrl;
 
@@ -49,20 +68,14 @@ public class ClientImpl implements Client {
 
     private final long eventsTimeoutMillis;
 
-    public ClientImpl(final ClientImpl.Builder builder) {
+    private final OkHttpClient okHttpClient = initHttpClient();
+
+    private ClientImpl(final ClientImpl.Builder builder) {
         this.nakadiUrl = requireNonNull(builder.nakadiUrl, "nakadiUrl must not be null");
         this.objectMapper = requireNonNull(builder.objectMapper, "objectMapper must not be null");
         this.authorizationValueProvider = builder.authorizationValueProvider;
         this.partitionsTimeoutMillis = builder.partitionsTimeoutMillis;
         this.eventsTimeoutMillis = builder.eventsTimeoutMillis;
-    }
-
-    public ClientImpl(final ConsumerConfig consumerConfig) {
-        this.nakadiUrl = consumerConfig.getNakadiUrl();
-        this.objectMapper = consumerConfig.getObjectMapper();
-        this.authorizationValueProvider = consumerConfig.getAuthorizationValueProvider();
-        this.partitionsTimeoutMillis = consumerConfig.getPartitionsTimeoutMillis();
-        this.eventsTimeoutMillis = consumerConfig.getEventsTimeoutMillis();
     }
 
     @Override
@@ -98,6 +111,37 @@ public class ClientImpl implements Client {
     public Single<String> getContent(final EventTypeCursor cursor) {
         final Observable<HttpResponseChunk> request = getContent0(cursor, 1);
         return request.map(HttpResponseChunk::getContent).firstOrDefault(null).toSingle();
+    }
+
+    @Override
+    public Single<List<NakadiPartition>> getCursorsLag(final List<EventTypeCursor> cursors) {
+        checkNotNull(cursors, "cursors must not be null");
+        checkArgument(!cursors.isEmpty(), "cursors must not be empty");
+        checkArgument(cursors.stream().map(EventTypeCursor::getEventType).distinct().count() == 1,
+            "cursors must contain cursors of only one type");
+
+        return Single.<List<NakadiPartition>>fromCallable(() -> {
+                final EventType eventType = cursors.get(0).getEventType();
+                final HttpUrl httpUrl = HttpUrl.parse(nakadiUrl).newBuilder().addPathSegment("event-types")
+                        .addPathSegment(eventType.getName()).addPathSegment("cursors-lag").build();
+                final Request request = new Request.Builder().url(httpUrl).post(
+                        RequestBody.create(CONTENT_TYPE, //
+                            getNakadiCursors(cursors))) //
+                    .build();
+                final Response response = okHttpClient.newCall(request).execute();
+                if (response.isSuccessful()) {
+                    return objectMapper.readValue(response.body().byteStream(), NAKADI_PARTITIONS_TYPE);
+                } else {
+                    throw new RuntimeException(
+                        format("Get cursors lag failed for cursors [%s]: [%s]", cursors, response.body().string()));
+                }
+            });
+    }
+
+    private String getNakadiCursors(final List<EventTypeCursor> cursors) throws JsonProcessingException {
+        final List<NakadiCursor> nakadiCursors = cursors.stream().map(cursor ->
+                    new NakadiCursor(cursor.getPartition(), cursor.getOffset())).collect(Collectors.toList());
+        return objectMapper.writeValueAsString(nakadiCursors);
     }
 
     private Observable<HttpResponseChunk> getContent0(final EventTypeCursor cursor, final int streamLimit) {
@@ -169,4 +213,24 @@ public class ClientImpl implements Client {
     ObjectMapper getObjectMapper() {
         return objectMapper;
     }
+
+    @VisibleForTesting
+    OkHttpClient initHttpClient() {
+        return new OkHttpClient.Builder().addInterceptor(getAuthorizationInterceptor()).build();
+    }
+
+    private Interceptor getAuthorizationInterceptor() {
+        return new Interceptor() {
+            @Override
+            public Response intercept(final Chain chain) throws IOException {
+                if (authorizationValueProvider != null) {
+                    return chain.proceed(chain.request().newBuilder().addHeader("Authorization",
+                                authorizationValueProvider.get()).build());
+                } else {
+                    return chain.proceed(chain.request());
+                }
+            }
+        };
+    }
+
 }

@@ -259,7 +259,7 @@ public class ZKLeaderConsumerPartitionRebalanceStrategyTest {
     }
 
     private NakadiPartition nakadiPartition(final String partition) {
-        return new NakadiPartition(partition, "0", "0");
+        return new NakadiPartition(partition, "0", "0", 0L);
     }
 
     private Map<String, ZKMember> newCurrentMember(final ZKMember... members) {

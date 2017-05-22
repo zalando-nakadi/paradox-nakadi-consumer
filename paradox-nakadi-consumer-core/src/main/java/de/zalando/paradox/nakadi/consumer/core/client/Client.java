@@ -15,4 +15,7 @@ public interface Client {
     Single<String> getEvent(final EventTypeCursor cursor);
 
     Single<String> getContent(final EventTypeCursor cursor);
+
+    Single<List<NakadiPartition>> getCursorsLag(final List<EventTypeCursor> cursors);
+
 }

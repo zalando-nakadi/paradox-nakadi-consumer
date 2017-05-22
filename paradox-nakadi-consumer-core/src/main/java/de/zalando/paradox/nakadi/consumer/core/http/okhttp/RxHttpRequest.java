@@ -158,7 +158,6 @@ public class RxHttpRequest {
 
         final Map<String, String> result = new HashMap<>(headers);
         final String value = authorizationValueProvider.get();
-        LOGGER.debug("Authorization header value '{}'", value);
         result.put(AUTHORIZATION_HEADER, value);
         return result;
     }

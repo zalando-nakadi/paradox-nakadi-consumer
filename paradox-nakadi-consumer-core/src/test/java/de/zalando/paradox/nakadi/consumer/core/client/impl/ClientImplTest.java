@@ -1,9 +1,11 @@
 package de.zalando.paradox.nakadi.consumer.core.client.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +28,31 @@ public class ClientImplTest {
     private static EventType ORDER_RECEIVED = EventType.of("order.ORDER_RECEIVED");
 
     private static ClientImpl clientImpl = ClientImpl.Builder.of(NAKADI_URL).build();
+
+    @Test
+    public void testShouldThrowWhenRequestingUnconsumedEventsWithNullCursors() {
+        assertThatThrownBy(() -> { clientImpl.getCursorsLag(null); }).isInstanceOf(NullPointerException.class)
+                                  .hasMessage("cursors must not be null");
+    }
+
+    @Test
+    public void testShouldThrowWhenRequestingUnconsumedEventsWithEmptyCursors() {
+        assertThatThrownBy(() -> { clientImpl.getCursorsLag(Collections.emptyList()); }).isInstanceOf(
+            IllegalArgumentException.class).hasMessage("cursors must not be empty");
+    }
+
+    @Test
+    public void testShouldThrowWhenRequestingUnconsumedEventsForDifferentEventTypes() {
+        final EventTypeCursor eventTypeCursor = EventTypeCursor.of(EventTypePartition.of(EventType.of("test-event"),
+                    "0"), "BEGIN");
+        final EventTypeCursor eventTypeCursorDifferentType = EventTypeCursor.of(EventTypePartition.of(
+                    EventType.of("test-event-two"), "0"), "BEGIN");
+        assertThatThrownBy(() -> {
+                                      clientImpl.getCursorsLag(
+                                          Arrays.asList(eventTypeCursor, eventTypeCursorDifferentType));
+                                  }).isInstanceOf(IllegalArgumentException.class).hasMessage(
+                                      "cursors must contain cursors of only one type");
+    }
 
     @Test
     @Ignore("Needs Nakadi server")
