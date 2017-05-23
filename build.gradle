@@ -83,12 +83,12 @@ subprojects {
         options.encoding = 'UTF-8'
 
         dependencies {
-            testCompile ('junit:junit:${junitVersion}') {
+            testCompile ("junit:junit:${junitVersion}") {
                 exclude group: 'org.hamcrest'
             }
-            testCompile 'org.mockito:mockito-all:${mockitoVersion}'
-            testCompile 'org.assertj:assertj-core:${assertjVersion}'
-            testCompile "org.slf4j:slf4j-log4j12:${slf4jVersion}"
+            testCompile("org.mockito:mockito-all:${mockitoVersion}")
+            testCompile("org.assertj:assertj-core:${assertjVersion}")
+            testCompile("org.slf4j:slf4j-log4j12:${slf4jVersion}")
         }
 
         test {
