@@ -17,10 +17,6 @@ paradox:
         messageRetentionPeriod: 1209600
     defaults:
       nakadiUrl: http://localhost:8080
-      nakadiTokenId: nakadi-event-stream-read
-      zookeeperBrokers: 127.0.0.1:2181
-      defaultConsumerName: default-consumer
-      oauth2Enabled : false
       partitionCoordinatorProvider: simple
       eventsBatchLimit: 1
       eventsStreamTimeoutSeconds: 180

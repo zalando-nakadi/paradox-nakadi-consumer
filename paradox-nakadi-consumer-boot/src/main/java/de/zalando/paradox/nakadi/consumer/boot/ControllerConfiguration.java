@@ -93,6 +93,10 @@ public class ControllerConfiguration {
                 @RequestParam(value = "consumer_name") final String consumerName,
                 @RequestParam(value = "verbose", required = false, defaultValue = "false") final boolean verbose) {
 
+            if (validateConsumerNameAndEventType(consumerName, eventName)) {
+                return getBadDeferredResult();
+            }
+
             final EventTypePartition eventTypePartition = EventTypePartition.of(EventType.of(eventName), partition);
             final EventTypeCursor queryCursor = replayHandler.getQueryCursor(EventTypeCursor.of(eventTypePartition,
                         offset));
@@ -109,6 +113,10 @@ public class ControllerConfiguration {
                 @RequestParam(value = "consumer_name") final String consumerName,
                 @RequestParam(value = "verbose", required = false, defaultValue = "false") final boolean verbose,
                 @RequestBody final String content) {
+
+            if (validateConsumerNameAndEventType(consumerName, eventName)) {
+                return getBadDeferredResult();
+            }
 
             final EventTypePartition eventTypePartition = EventTypePartition.of(EventType.of(eventName), partition);
             final Single<String> singleContent = Single.just(content);
@@ -146,6 +154,20 @@ public class ControllerConfiguration {
                 elem ->
                     elem.getEventName().equals(eventName)
                         && (null == consumerName || elem.getConsumerName().equals(consumerName));
+        }
+
+        private DeferredResult<ResponseEntity<?>> getBadDeferredResult() {
+            final DeferredResult<ResponseEntity<?>> deferredResult = new DeferredResult<>();
+            deferredResult.setErrorResult(badRequest().body("Consumer name does not match with event type."));
+            return deferredResult;
+        }
+
+        private boolean validateConsumerNameAndEventType(final String consumerName, final String eventType) {
+            final Predicate<EventTypeConsumer> eventTypeConsumerPredicate = (eventTypeConsumer) ->
+                    eventTypeConsumer.getConsumerName().equals(consumerName)
+                        && eventTypeConsumer.getEventName().equals(eventType);
+
+            return registry.getEventTypeConsumers().stream().noneMatch(eventTypeConsumerPredicate);
         }
     }
 }

@@ -21,8 +21,9 @@ paradox:
       zookeeperBrokers: 127.0.0.1:2181
       defaultConsumerName: default-consumer
       oauth2Enabled : false
-      partitionCoordinatorProvider: simple
-      eventsBatchLimit: 1
+      partitionCoordinatorProvider: zk
+      eventsStreamTimeoutSeconds: 180
+      eventsBatchLimit: 2
       eventsStreamTimeoutSeconds: 180
       eventsStreamLimit: 0
       eventsStreamKeepAliveLimit: 0

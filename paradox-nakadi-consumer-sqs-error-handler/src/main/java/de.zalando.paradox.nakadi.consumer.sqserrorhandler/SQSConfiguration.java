@@ -20,6 +20,12 @@ public class SQSConfiguration {
 
     private boolean enabled;
 
+    private boolean createQueueIfNotExists;
+
+    private String messageVisibilityTimeout;
+
+    private String messageRetentionPeriod;
+
     public String getQueueName() {
         return queueName;
     }
@@ -42,5 +48,29 @@ public class SQSConfiguration {
 
     public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isCreateQueueIfNotExists() {
+        return createQueueIfNotExists;
+    }
+
+    public void setCreateQueueIfNotExists(final boolean createQueueIfNotExists) {
+        this.createQueueIfNotExists = createQueueIfNotExists;
+    }
+
+    public String getMessageRetentionPeriod() {
+        return messageRetentionPeriod;
+    }
+
+    public void setMessageRetentionPeriod(final String messageRetentionPeriod) {
+        this.messageRetentionPeriod = messageRetentionPeriod;
+    }
+
+    public String getMessageVisibilityTimeout() {
+        return messageVisibilityTimeout;
+    }
+
+    public void setMessageVisibilityTimeout(final String messageVisibilityTimeout) {
+        this.messageVisibilityTimeout = messageVisibilityTimeout;
     }
 }

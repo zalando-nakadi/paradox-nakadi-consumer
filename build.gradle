@@ -288,6 +288,7 @@ project(":paradox-nakadi-consumer-sqs-error-handler-example") {
         compile(project(":paradox-nakadi-consumer-boot"))
         compile(project(":paradox-nakadi-consumer-partitioned-zk"))
         compile(project(":paradox-nakadi-consumer-sqs-error-handler"))
+        compile("com.amazonaws:aws-java-sdk-sqs:${amazonSQSVersion}")
 
         compile("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
         compile("org.springframework.boot:spring-boot-starter-log4j:${springBootVersion}")

@@ -2,6 +2,8 @@ package de.zalando.paradox.nakadi.consumer.sqsexample.handlers;
 
 import java.util.List;
 
+import org.apache.commons.lang3.RandomUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +49,10 @@ public class LocalTestHandlers {
         public void onEvent(final EventTypeCursor cursor, final OrderReceived object) {
             LOGGER.info("### cursor {}", cursor);
             LOGGER.info("### event  {}", object);
+
+            if (shouldThrowException()) {
+                throw new RuntimeException("PrintBatchEvents test exception");
+            }
         }
     }
 
@@ -63,6 +69,10 @@ public class LocalTestHandlers {
         public void onEvent(final EventTypeCursor cursor, final List<OrderReceived> events) {
             LOGGER.info("### cursor {}", cursor);
             LOGGER.info("### events {} / {}", events.size(), events);
+
+            if (shouldThrowException()) {
+                throw new RuntimeException("PrintBulkBatchEvents test exception");
+            }
         }
     }
 
@@ -78,6 +88,10 @@ public class LocalTestHandlers {
             public void onEvent(final EventTypeCursor cursor, final List<OrderReceived> events) {
                 LOGGER.info("### cursor {}", cursor);
                 LOGGER.info("### events {} / {}", events.size(), events);
+
+                if (shouldThrowException()) {
+                    throw new RuntimeException("BatchEventsBulkHandler test exception");
+                }
             }
         };
     }
@@ -92,6 +106,10 @@ public class LocalTestHandlers {
             public void onEvent(final EventTypeCursor cursor, final String content) {
                 logger.info("### cursor {}", cursor);
                 logger.info("### raw content {} / {}", content.length(), content);
+
+                if (shouldThrowException()) {
+                    throw new RuntimeException("RawContentHandler test exception");
+                }
             }
         };
     }
@@ -106,6 +124,10 @@ public class LocalTestHandlers {
         public void onEvent(final EventTypeCursor cursor, final String content) {
             LOGGER.info("### cursor {}", cursor);
             LOGGER.info("### raw event {} / {}", content.length(), content);
+
+            if (shouldThrowException()) {
+                throw new RuntimeException("PrintRawEvent test exception");
+            }
         }
     }
 
@@ -119,6 +141,10 @@ public class LocalTestHandlers {
         public void onEvent(final EventTypeCursor cursor, final JsonNode jsonNode) {
             LOGGER.info("### cursor {}", cursor);
             LOGGER.info("### json event {} ", jsonNode);
+
+            if (shouldThrowException()) {
+                throw new RuntimeException("PrintJsonEvent test exception");
+            }
         }
     }
 
@@ -134,6 +160,10 @@ public class LocalTestHandlers {
             public void onEvent(final EventTypeCursor cursor, final List<JsonNode> jsonNodes) {
                 logger.info("### cursor {}", cursor);
                 logger.info("### json events {} / {}", jsonNodes.size(), jsonNodes);
+
+                if (shouldThrowException()) {
+                    throw new RuntimeException("JsonEventBulkHandler test exception");
+                }
             }
         };
     }
@@ -158,7 +188,15 @@ public class LocalTestHandlers {
             public void onEvent(final EventTypeCursor cursor, final String content) {
                 logger.info("### cursor {}", cursor);
                 logger.info("### raw content {} / {}", content.length(), content);
+
+                if (shouldThrowException()) {
+                    throw new RuntimeException("RawContentHandler test exception");
+                }
             }
         };
+    }
+
+    private static boolean shouldThrowException() {
+        return RandomUtils.nextInt(0, 1000000) > 900000;
     }
 }
