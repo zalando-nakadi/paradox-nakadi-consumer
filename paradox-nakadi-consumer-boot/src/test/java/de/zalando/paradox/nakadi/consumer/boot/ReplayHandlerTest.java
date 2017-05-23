@@ -43,6 +43,8 @@ public class ReplayHandlerTest {
 
     private static final String EVENT_TYPE = "order.ORDER_RECEIVED";
 
+    private static final String CONSUMER_NAME = "orderRecievedConsumer";
+
     private static final EventTypePartition PARTITION = EventTypePartition.of(EventType.of(EVENT_TYPE), "0");
     private static final EventTypeCursor CURSOR = EventTypeCursor.of(PARTITION, "5");
 
@@ -130,7 +132,7 @@ public class ReplayHandlerTest {
     @Test
     public void testRawContentHandler() {
         final RawContentHandler handler = Mockito.mock(RawContentHandler.class);
-        replayHandler.handle(handler, PARTITION, CONTENT);
+        replayHandler.handle(CONSUMER_NAME,handler, PARTITION, CONTENT);
         verify(handler, times(1)).onEvent(eventCursorCaptor.capture(), stringCaptor.capture());
         assertThat(eventCursorCaptor.getValue()).isEqualTo(CURSOR);
         assertThat(stringCaptor.getValue()).isEqualTo(CONTENT);
@@ -138,7 +140,7 @@ public class ReplayHandlerTest {
 
     @Test
     public void testBatchEventsHandler() {
-        replayHandler.handle(batchEventsHandler, PARTITION, CONTENT);
+        replayHandler.handle(CONSUMER_NAME,batchEventsHandler, PARTITION, CONTENT);
         verify(batchEventsHandler, times(1)).onEvent(eventCursorCaptor.capture(), orderCaptor.capture());
         assertThat(orderCaptor.getValue().metadata.eventType).isEqualTo(EVENT_TYPE);
         assertThat(orderCaptor.getValue().orderNumber).isEqualTo(ORDER_NUMBER);
@@ -146,7 +148,7 @@ public class ReplayHandlerTest {
 
     @Test
     public void testBatchEventsBulkHandler() {
-        replayHandler.handle(batchEventsBulkHandler, PARTITION, CONTENT);
+        replayHandler.handle(CONSUMER_NAME,batchEventsBulkHandler, PARTITION, CONTENT);
         verify(batchEventsBulkHandler, times(1)).onEvent(eventCursorCaptor.capture(), ordersCaptor.capture());
         assertThat(ordersCaptor.getValue()).hasSize(1);
         assertThat(ordersCaptor.getValue()).extracting("orderNumber").containsExactly(ORDER_NUMBER);
@@ -155,7 +157,7 @@ public class ReplayHandlerTest {
     @Test
     public void testRawEventHandler() {
         final RawEventHandler handler = Mockito.mock(RawEventHandler.class);
-        replayHandler.handle(handler, PARTITION, CONTENT);
+        replayHandler.handle(CONSUMER_NAME,handler, PARTITION, CONTENT);
         verify(handler, times(1)).onEvent(eventCursorCaptor.capture(), stringCaptor.capture());
         assertThat(stringCaptor.getValue()).startsWith("{\"metadata\":{");
     }
@@ -163,7 +165,7 @@ public class ReplayHandlerTest {
     @Test
     public void testRawEventBulkHandler() {
         final RawEventBulkHandler handler = Mockito.mock(RawEventBulkHandler.class);
-        replayHandler.handle(handler, PARTITION, CONTENT);
+        replayHandler.handle(CONSUMER_NAME,handler, PARTITION, CONTENT);
         verify(handler, times(1)).onEvent(eventCursorCaptor.capture(), stringsCaptor.capture());
         assertThat(stringsCaptor.getValue()).hasSize(1);
         assertThat(stringsCaptor.getValue().get(0)).startsWith("{\"metadata\":{");
@@ -172,7 +174,7 @@ public class ReplayHandlerTest {
     @Test
     public void testJsonEventHandler() {
         final JsonEventHandler handler = Mockito.mock(JsonEventHandler.class);
-        replayHandler.handle(handler, PARTITION, CONTENT);
+        replayHandler.handle(CONSUMER_NAME,handler, PARTITION, CONTENT);
         verify(handler, times(1)).onEvent(eventCursorCaptor.capture(), jsonNodeCaptor.capture());
         assertThat(jsonNodeCaptor.getValue().get("order_number").textValue()).isEqualTo(ORDER_NUMBER);
     }
@@ -180,7 +182,7 @@ public class ReplayHandlerTest {
     @Test
     public void testJsonEventBulkHandler() {
         final JsonEventBulkHandler handler = Mockito.mock(JsonEventBulkHandler.class);
-        replayHandler.handle(handler, PARTITION, CONTENT);
+        replayHandler.handle(CONSUMER_NAME,handler, PARTITION, CONTENT);
         verify(handler, times(1)).onEvent(eventCursorCaptor.capture(), jsonNodesCaptor.capture());
         assertThat(jsonNodesCaptor.getValue()).hasSize(1);
         assertThat(jsonNodesCaptor.getValue().get(0).get("order_number").textValue()).isEqualTo(ORDER_NUMBER);
@@ -189,7 +191,7 @@ public class ReplayHandlerTest {
     @Test
     public void testUnknownHandler() {
         final EventHandler handler = Mockito.mock(EventHandler.class);
-        assertThatThrownBy(() -> replayHandler.handle(handler, PARTITION, CONTENT)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> replayHandler.handle(CONSUMER_NAME,handler, PARTITION, CONTENT)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test

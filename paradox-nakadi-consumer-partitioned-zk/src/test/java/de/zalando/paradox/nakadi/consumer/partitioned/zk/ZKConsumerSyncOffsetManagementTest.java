@@ -21,6 +21,8 @@ import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionRebalanceLis
 
 public class ZKConsumerSyncOffsetManagementTest {
 
+    private static final String CONSUMER_NAME = "consumerName";
+
     private ZKConsumerSyncOffsetManagement zKConsumerSyncOffsetManagement;
 
     @Mock
@@ -49,16 +51,17 @@ public class ZKConsumerSyncOffsetManagementTest {
     @Test
     public void testShouldThrowExceptionWhenItGetsTheUnrecoverableException() {
         Assertions.assertThatThrownBy(() ->
-                          zKConsumerSyncOffsetManagement.error(new UnrecoverableException(), eventTypePartition, "2324",
-                              "event")).isInstanceOf(UnrecoverableException.class);
+                          zKConsumerSyncOffsetManagement.error(CONSUMER_NAME, new UnrecoverableException(),
+                              eventTypePartition, "2324", "event")).isInstanceOf(UnrecoverableException.class);
     }
 
     @Test
     public void testShouldLogTheExceptionWithHandler() {
 
-        zKConsumerSyncOffsetManagement.error(new RuntimeException(), eventTypePartition, "2324", "event");
+        zKConsumerSyncOffsetManagement.error(CONSUMER_NAME, new RuntimeException(), eventTypePartition, "2324",
+            "event");
 
-        Mockito.verify(eventErrorHandler).onError(Mockito.any(Throwable.class), Mockito.any(EventTypePartition.class),
-            eq("2324"), eq("event"));
+        Mockito.verify(eventErrorHandler).onError(Mockito.eq(CONSUMER_NAME), Mockito.any(Throwable.class),
+            Mockito.any(EventTypePartition.class), eq("2324"), eq("event"));
     }
 }

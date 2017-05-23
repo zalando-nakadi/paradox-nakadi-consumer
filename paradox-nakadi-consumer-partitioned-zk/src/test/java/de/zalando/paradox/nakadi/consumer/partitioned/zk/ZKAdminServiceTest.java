@@ -32,7 +32,6 @@ public class ZKAdminServiceTest extends AbstractZKTest {
     public void setUp() throws Exception {
         super.setUp();
         adminService = new ZKAdminService(zkHolder);
-
     }
 
     @Test
@@ -46,8 +45,7 @@ public class ZKAdminServiceTest extends AbstractZKTest {
 
         assertThat(adminService.getConsumerInfo()).hasSize(2);
 
-        List<Map<String, Object>> map;
-        map = adminService.getEventConsumerInfo(EVENT_ORDER_RECEIVED);
+        List<Map<String, Object>> map = adminService.getEventConsumerInfo(EVENT_ORDER_RECEIVED);
         assertThat(map).hasSize(1);
         assertThat(map.get(0)).contains(entry("eventName", EVENT_ORDER_RECEIVED.getName()),
             entry("consumerName", CONSUMER_1));

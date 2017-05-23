@@ -15,6 +15,8 @@ import de.zalando.paradox.nakadi.consumer.core.partitioned.impl.SimplePartitionC
 public class SimpleHttpEventReceiverTestConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleHttpEventReceiverTestConsumer.class);
 
+    private static final String CONSUMER_NAME = "consumerName";
+
     public static void main(final String[] args) throws Exception {
         final String baseUri = "http://localhost:8080";
         final String eventName = "order.ORDER_RECEIVED";
@@ -49,7 +51,8 @@ public class SimpleHttpEventReceiverTestConsumer {
             LOGGER.info("### raw event  {}", content);
         };
 
-        return new ConsumerConfig.Builder(baseUri, eventName, coordinator).withRawEventHandler(handler).build();
+        return new ConsumerConfig.Builder(baseUri, eventName, coordinator, CONSUMER_NAME).withRawEventHandler(handler)
+                                                                                         .build();
     }
 
     @SuppressWarnings("unused")
@@ -59,7 +62,8 @@ public class SimpleHttpEventReceiverTestConsumer {
             LOGGER.info("### cursor  {}", cursor);
             LOGGER.info("### raw content  {}", content);
         };
-        return new ConsumerConfig.Builder(baseUri, eventName, coordinator).withRawContentHandler(handler).build();
+        return new ConsumerConfig.Builder(baseUri, eventName, coordinator, CONSUMER_NAME).withRawContentHandler(handler)
+                                                                                         .build();
     }
 
     @SuppressWarnings("unused")
@@ -79,6 +83,7 @@ public class SimpleHttpEventReceiverTestConsumer {
             }
         };
 
-        return ConsumerConfig.Builder.of(baseUri, eventName, coordinator).withBatchEventsHandler(handler).build();
+        return ConsumerConfig.Builder.of(baseUri, eventName, coordinator, CONSUMER_NAME).withBatchEventsHandler(handler)
+                                     .build();
     }
 }

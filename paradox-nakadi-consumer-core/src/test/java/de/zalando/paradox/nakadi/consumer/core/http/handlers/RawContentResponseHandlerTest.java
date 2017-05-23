@@ -26,6 +26,8 @@ import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionCoordinator;
 
 public class RawContentResponseHandlerTest {
 
+    private static final String CONSUMER_NAME = "consumerName";
+
     @Mock
     private PartitionCoordinator coordinator;
 
@@ -37,7 +39,8 @@ public class RawContentResponseHandlerTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        this.handler = new RawContentResponseHandler(EVENT_TYPE_PARTITION, OBJECT_MAPPER, coordinator, delegate);
+        this.handler = new RawContentResponseHandler(CONSUMER_NAME, EVENT_TYPE_PARTITION, OBJECT_MAPPER, coordinator,
+                delegate);
     }
 
     @Test
@@ -107,6 +110,6 @@ public class RawContentResponseHandlerTest {
 
         verify(delegate, times(1)).onEvent(any(), any());
         verify(coordinator, times(1)).commit(any());
-        verify(coordinator, times(1)).error(any(), any(), any(), any());
+        verify(coordinator, times(1)).error(any(), any(), any(), any(), any());
     }
 }
