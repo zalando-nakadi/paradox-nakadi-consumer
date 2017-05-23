@@ -8,9 +8,9 @@ import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionCoordinator;
 
 public class RawEventResponseBulkHandler extends AbstractEventsResponseBulkHandler<String> {
 
-    public RawEventResponseBulkHandler(final EventTypePartition eventTypePartition, final ObjectMapper jsonMapper,
-            final PartitionCoordinator coordinator, final RawEventBulkHandler delegate) {
-        super(eventTypePartition, coordinator, RawEventResponseBulkHandler.class, jsonMapper, delegate);
+    public RawEventResponseBulkHandler(final String consumerName, final EventTypePartition eventTypePartition,
+            final ObjectMapper jsonMapper, final PartitionCoordinator coordinator, final RawEventBulkHandler delegate) {
+        super(consumerName, eventTypePartition, coordinator, RawEventResponseBulkHandler.class, jsonMapper, delegate);
     }
 
     @Override

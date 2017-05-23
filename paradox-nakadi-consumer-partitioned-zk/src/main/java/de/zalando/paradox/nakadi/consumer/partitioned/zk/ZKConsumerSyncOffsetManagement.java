@@ -76,8 +76,8 @@ class ZKConsumerSyncOffsetManagement implements PartitionOffsetManagement {
     }
 
     @Override
-    public void error(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String offset,
-            final String rawEvent) {
+    public void error(final String consumerName, final Throwable t, final EventTypePartition eventTypePartition,
+            @Nullable final String offset, final String rawEvent) {
 
         // it will unsubscribe reactive receiver
         if (ThrowableUtils.isUnrecoverableException(t)) {
@@ -85,7 +85,7 @@ class ZKConsumerSyncOffsetManagement implements PartitionOffsetManagement {
             ThrowableUtils.throwException(t);
         } else {
             eventErrorHandlers.forEach(eventErrorHandler ->
-                    eventErrorHandler.onError(t, eventTypePartition, offset, rawEvent));
+                    eventErrorHandler.onError(consumerName, t, eventTypePartition, offset, rawEvent));
 
             LOGGER.error("Error [{}] reason [{}] raw event [{}] ", eventTypePartition, getMessage(t), rawEvent, t);
         }

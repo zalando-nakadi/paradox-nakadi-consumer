@@ -101,8 +101,8 @@ public class SimplePartitionCoordinator extends AbstractPartitionCoordinator {
     }
 
     @Override
-    public void error(final Throwable t, final EventTypePartition eventTypePartition, final String cursor,
-            final String rawEvent) {
+    public void error(final String consumername, final Throwable t, final EventTypePartition eventTypePartition,
+            final String cursor, final String rawEvent) {
 
         // it will unsubscribe reactive receiver
         if (ThrowableUtils.isUnrecoverableException(t)) {
@@ -111,7 +111,7 @@ public class SimplePartitionCoordinator extends AbstractPartitionCoordinator {
         } else {
 
             eventErrorHandlerList.forEach(eventErrorHandler ->
-                    eventErrorHandler.onError(t, eventTypePartition, cursor, rawEvent));
+                    eventErrorHandler.onError(consumername, t, eventTypePartition, cursor, rawEvent));
             log.error("Error [{}] reason [{}]", eventTypePartition, getMessage(t), t);
         }
     }

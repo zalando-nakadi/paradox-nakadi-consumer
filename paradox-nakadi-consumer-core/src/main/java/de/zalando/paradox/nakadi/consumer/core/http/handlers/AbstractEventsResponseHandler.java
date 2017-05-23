@@ -19,9 +19,11 @@ abstract class AbstractEventsResponseHandler<T> extends AbstractResponseHandler 
 
     private final EventHandler<T> delegate;
 
-    AbstractEventsResponseHandler(final EventTypePartition eventTypePartition, final PartitionCoordinator coordinator,
-            final Class<?> loggerClazz, final ObjectMapper jsonMapper, final EventHandler<T> delegate) {
-        super(eventTypePartition, coordinator, LoggingUtils.getLogger(loggerClazz, eventTypePartition), jsonMapper);
+    AbstractEventsResponseHandler(final String consumerName, final EventTypePartition eventTypePartition,
+            final PartitionCoordinator coordinator, final Class<?> loggerClazz, final ObjectMapper jsonMapper,
+            final EventHandler<T> delegate) {
+        super(consumerName, eventTypePartition, coordinator, LoggingUtils.getLogger(loggerClazz, eventTypePartition),
+            jsonMapper);
         this.delegate = delegate;
     }
 
@@ -50,7 +52,7 @@ abstract class AbstractEventsResponseHandler<T> extends AbstractResponseHandler 
         try {
             return getEventBatch(event);
         } catch (final Throwable t) {
-            coordinator.error(t, eventTypePartition, null, event);
+            coordinator.error(consumerName, t, eventTypePartition, null, event);
             return null;
         }
     }
@@ -61,7 +63,7 @@ abstract class AbstractEventsResponseHandler<T> extends AbstractResponseHandler 
                 delegate.onEvent(cursor, event);
             } catch (final Throwable t) {
                 log.error("Handler error at cursor [{}]", cursor);
-                coordinator.error(t, eventTypePartition, cursor.getOffset(), content);
+                coordinator.error(consumerName, t, eventTypePartition, cursor.getOffset(), content);
             }
         }
 

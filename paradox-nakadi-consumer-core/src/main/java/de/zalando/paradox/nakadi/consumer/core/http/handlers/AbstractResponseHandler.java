@@ -18,13 +18,15 @@ abstract class AbstractResponseHandler implements ResponseHandler {
     protected final ObjectMapper jsonMapper;
     protected final EventTypePartition eventTypePartition;
     protected final PartitionCoordinator coordinator;
+    protected final String consumerName;
 
-    AbstractResponseHandler(final EventTypePartition eventTypePartition, final PartitionCoordinator coordinator,
-            final Logger log, final ObjectMapper jsonMapper) {
+    AbstractResponseHandler(final String consumerName, final EventTypePartition eventTypePartition,
+            final PartitionCoordinator coordinator, final Logger log, final ObjectMapper jsonMapper) {
         this.eventTypePartition = eventTypePartition;
         this.coordinator = coordinator;
         this.log = log;
         this.jsonMapper = jsonMapper;
+        this.consumerName = consumerName;
     }
 
     String[] getEvents(final String string) {

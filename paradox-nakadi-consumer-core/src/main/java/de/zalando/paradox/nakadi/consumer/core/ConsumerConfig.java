@@ -55,6 +55,8 @@ public class ConsumerConfig {
 
     private final ResponseHandlerFactory responseHandlerFactory;
 
+    private final String consumerName;
+
     private ConsumerConfig(final Builder builder) {
         this.nakadiUrl = requireNonNull(builder.nakadiUrl, "nakadiUrl must not be null");
         this.eventType = requireNonNull(builder.eventType, "eventType must not be null");
@@ -71,6 +73,7 @@ public class ConsumerConfig {
                 "partitionCoordinator must not be null");
         this.responseHandlerFactory = requireNonNull(builder.responseHandlerFactory,
                 "responseHandlerFactory must not be null");
+        this.consumerName = requireNonNull(builder.consumerName, "consumerName must not be null");
     }
 
     public String getNakadiUrl() {
@@ -125,6 +128,10 @@ public class ConsumerConfig {
         return eventStreamConfig;
     }
 
+    public String getConsumerName() {
+        return consumerName;
+    }
+
     public static class Builder {
 
         private final String nakadiUrl;
@@ -153,16 +160,19 @@ public class ConsumerConfig {
 
         private ResponseHandlerFactory responseHandlerFactory;
 
-        public Builder(final String nakadiUrl, final String eventName,
-                final PartitionCoordinator partitionCoordinator) {
+        private final String consumerName;
+
+        public Builder(final String nakadiUrl, final String eventName, final PartitionCoordinator partitionCoordinator,
+                final String consumerName) {
             this.nakadiUrl = nakadiUrl;
             this.eventType = EventType.of(requireNonNull(eventName, "eventName must not be null"));
             this.partitionCoordinator = partitionCoordinator;
+            this.consumerName = consumerName;
         }
 
-        public static Builder of(final String nakadiUrl, final String eventName,
-                final PartitionCoordinator coordinator) {
-            return new Builder(nakadiUrl, eventName, coordinator);
+        public static Builder of(final String nakadiUrl, final String eventName, final PartitionCoordinator coordinator,
+                final String consumerName) {
+            return new Builder(nakadiUrl, eventName, coordinator, consumerName);
         }
 
         public Builder withObjectMapper(final ObjectMapper objectMapper) {
@@ -219,38 +229,44 @@ public class ConsumerConfig {
 
         public <T> Builder withBatchEventsHandler(final BatchEventsHandler<T> handler) {
             return withResponseHandlerFactory((eventTypePartition, jsonMapper) ->
-                        new BatchEventsResponseHandler<>(eventTypePartition, jsonMapper, partitionCoordinator, handler));
+                        new BatchEventsResponseHandler<>(consumerName, eventTypePartition, jsonMapper,
+                            partitionCoordinator, handler));
         }
 
         public <T> Builder withBatchEventsBulkHandler(final BatchEventsBulkHandler<T> handler) {
             return withResponseHandlerFactory((eventTypePartition, jsonMapper) ->
-                        new BatchEventsResponseBulkHandler<>(eventTypePartition, jsonMapper, partitionCoordinator,
-                            handler));
+                        new BatchEventsResponseBulkHandler<>(consumerName, eventTypePartition, jsonMapper,
+                            partitionCoordinator, handler));
         }
 
         public Builder withRawContentHandler(final RawContentHandler handler) {
             return withResponseHandlerFactory((eventTypePartition, jsonMapper) ->
-                        new RawContentResponseHandler(eventTypePartition, jsonMapper, partitionCoordinator, handler));
+                        new RawContentResponseHandler(consumerName, eventTypePartition, jsonMapper,
+                            partitionCoordinator, handler));
         }
 
         public Builder withRawEventHandler(final RawEventHandler handler) {
             return withResponseHandlerFactory((eventTypePartition, jsonMapper) ->
-                        new RawEventResponseHandler(eventTypePartition, jsonMapper, partitionCoordinator, handler));
+                        new RawEventResponseHandler(consumerName, eventTypePartition, jsonMapper, partitionCoordinator,
+                            handler));
         }
 
         public Builder withRawEventBulkHandler(final RawEventBulkHandler handler) {
             return withResponseHandlerFactory((eventTypePartition, jsonMapper) ->
-                        new RawEventResponseBulkHandler(eventTypePartition, jsonMapper, partitionCoordinator, handler));
+                        new RawEventResponseBulkHandler(consumerName, eventTypePartition, jsonMapper,
+                            partitionCoordinator, handler));
         }
 
         public Builder withJsonEventHandler(final JsonEventHandler handler) {
             return withResponseHandlerFactory((eventTypePartition, jsonMapper) ->
-                        new JsonEventResponseHandler(eventTypePartition, jsonMapper, partitionCoordinator, handler));
+                        new JsonEventResponseHandler(consumerName, eventTypePartition, jsonMapper, partitionCoordinator,
+                            handler));
         }
 
         public Builder withJsonEventBulkHandler(final JsonEventBulkHandler handler) {
             return withResponseHandlerFactory((eventTypePartition, jsonMapper) ->
-                        new JsonEventResponseBulkHandler(eventTypePartition, jsonMapper, partitionCoordinator, handler));
+                        new JsonEventResponseBulkHandler(consumerName, eventTypePartition, jsonMapper,
+                            partitionCoordinator, handler));
         }
 
         public static ObjectMapper defaultObjectMapper() {

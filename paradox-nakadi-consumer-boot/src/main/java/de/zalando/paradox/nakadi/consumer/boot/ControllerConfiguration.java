@@ -90,7 +90,7 @@ public class ControllerConfiguration {
         public DeferredResult<ResponseEntity<?>> replay(@PathVariable(value = "event_type") final String eventName,
                 @PathVariable(value = "partition") final String partition,
                 @PathVariable(value = "offset") final String offset,
-                @RequestParam(value = "consumer_name", required = false) final String consumerName,
+                @RequestParam(value = "consumer_name") final String consumerName,
                 @RequestParam(value = "verbose", required = false, defaultValue = "false") final boolean verbose) {
 
             final EventTypePartition eventTypePartition = EventTypePartition.of(EventType.of(eventName), partition);
@@ -106,7 +106,7 @@ public class ControllerConfiguration {
         )
         public DeferredResult<ResponseEntity<?>> restore(@PathVariable(value = "event_type") final String eventName,
                 @PathVariable(value = "partition") final String partition,
-                @RequestParam(value = "consumer_name", required = false) final String consumerName,
+                @RequestParam(value = "consumer_name") final String consumerName,
                 @RequestParam(value = "verbose", required = false, defaultValue = "false") final boolean verbose,
                 @RequestBody final String content) {
 
@@ -129,7 +129,7 @@ public class ControllerConfiguration {
                         consumers.forEach(eventTypeConsumer -> {
                             final EventHandler<?> handler = requireNonNull(
                                     registry.getEventTypeConsumerHandler(eventTypeConsumer), "handler not found");
-                            replayHandler.handle(handler, eventTypePartition, content);
+                            replayHandler.handle(consumerName, handler, eventTypePartition, content);
                         });
                         deferredResult.setResult(ok(verbose ? content : ""));
 
