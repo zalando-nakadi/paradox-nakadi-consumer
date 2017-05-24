@@ -458,7 +458,7 @@ If the SQS error handler is enabled, it will store the failed events to the SQS 
 
 Here are the configuration explanations 
 
-`paradox.nakadi.errorhandler.sqs.enabled`: If it is true, the handler is binded to context automatically.
+`paradox.nakadi.errorhandler.sqs.enabled`: If it is true, the handler is bound to context automatically.
 
 `paradox.nakadi.errorhandler.sqs.queueName`: The place where the failed events are stored.
 
