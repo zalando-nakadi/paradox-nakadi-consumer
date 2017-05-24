@@ -1,6 +1,4 @@
-package de.zalando.paradox.nakadi.consumer.sqserrorhandler;
-
-import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
+package de.zalando.paradox.nakadi.consumer.core.domain;
 
 public class FailedEvent {
 

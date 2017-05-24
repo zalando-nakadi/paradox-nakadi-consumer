@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
+import de.zalando.paradox.nakadi.consumer.core.domain.FailedEvent;
 
 public class SQSErrorHandlerTest {
 
@@ -44,7 +45,7 @@ public class SQSErrorHandlerTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private SQSConfiguration sqsConfiguration;
+    private SQSConfig sqsConfig;
 
     @Before
     public void setUp() {
@@ -80,8 +81,8 @@ public class SQSErrorHandlerTest {
                                         sqsErrorHandler.onError(randomAlphabetic(10), new RuntimeException(),
                                             EventTypePartition.of(EventType.of(randomAlphabetic(10)),
                                                 randomAlphabetic(1)), randomNumeric(10), randomAlphabetic(50)))
-            .isInstanceOf(IllegalStateException.class).hasMessage(
-                                    "The result of sending event to SQS is not successful.");
+            .isInstanceOf(IllegalStateException.class).hasMessageContaining(
+                                    "The result of sending event to SQS is not successful");
     }
 
     @Test
@@ -171,5 +172,4 @@ public class SQSErrorHandlerTest {
                                                 randomAlphabetic(10)), randomAlphabetic(10), randomAlphabetic(10)))
             .isInstanceOf(NullPointerException.class).hasMessage("exception must not be null.");
     }
-
 }

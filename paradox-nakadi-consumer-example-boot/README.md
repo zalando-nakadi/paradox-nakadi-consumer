@@ -28,5 +28,4 @@
 
     java -Dspring.profiles.active=local-zk -jar ./paradox-nakadi-consumer-example-boot-0.0.1-SNAPSHOT.jar
 
-
-For the mock server, there are two sample responses under resources folder.
+For publishing events, a mock server can be used and responses can be found under resources folder.

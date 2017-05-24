@@ -19,29 +19,29 @@ import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 
 public class SQSQueueHelper {
 
-    private final SQSConfiguration sqsConfiguration;
+    private final SQSConfig sqsConfig;
 
     private final AmazonSQS amazonSQS;
 
-    public SQSQueueHelper(final SQSConfiguration sqsConfiguration, final AmazonSQS amazonSQS) {
-        this.sqsConfiguration = sqsConfiguration;
+    public SQSQueueHelper(final SQSConfig sqsConfig, final AmazonSQS amazonSQS) {
+        this.sqsConfig = sqsConfig;
         this.amazonSQS = amazonSQS;
     }
 
     @PostConstruct
     public void init() {
 
-        if (sqsConfiguration.isCreateQueueIfNotExists()) {
+        if (sqsConfig.isCreateQueueIfNotExists()) {
 
-            validateCreateQueueAttributes(sqsConfiguration);
+            validateCreateQueueAttributes(sqsConfig);
 
-            if (shouldCreateANewQueue(sqsConfiguration.getQueueName())) {
+            if (shouldCreateANewQueue(sqsConfig.getQueueName())) {
 
                 final CreateQueueResult createQueueResult = amazonSQS.createQueue(getCreateQueueRequest());
 
                 if (createQueueResult.getSdkHttpMetadata().getHttpStatusCode() != 200) {
                     throw new IllegalStateException(String.format("The queue [%s] could not be created in region [%s]",
-                            sqsConfiguration.getQueueName(), sqsConfiguration.getRegion()));
+                            sqsConfig.getQueueName(), sqsConfig.getRegion()));
                 }
             }
         }
@@ -49,33 +49,33 @@ public class SQSQueueHelper {
 
     private CreateQueueRequest getCreateQueueRequest() {
         final CreateQueueRequest createQueueRequest = new CreateQueueRequest();
-        createQueueRequest.setQueueName(sqsConfiguration.getQueueName());
+        createQueueRequest.setQueueName(sqsConfig.getQueueName());
         createQueueRequest.addAttributesEntry(QueueAttributeName.VisibilityTimeout.toString(),
-            sqsConfiguration.getMessageVisibilityTimeout());
+            sqsConfig.getMessageVisibilityTimeout());
         createQueueRequest.addAttributesEntry(QueueAttributeName.MessageRetentionPeriod.toString(),
-            sqsConfiguration.getMessageVisibilityTimeout());
+            sqsConfig.getMessageVisibilityTimeout());
         return createQueueRequest;
     }
 
-    private void validateCreateQueueAttributes(final SQSConfiguration sqsConfiguration) {
-        checkArgument(isNumeric(sqsConfiguration.getMessageRetentionPeriod()),
+    private void validateCreateQueueAttributes(final SQSConfig sqsConfig) {
+        checkArgument(isNumeric(sqsConfig.getMessageRetentionPeriod()),
             "messageRetentionPeriod parameter must be numeric.");
 
-        final Integer messageRetentionPeriod = Integer.valueOf(sqsConfiguration.getMessageRetentionPeriod());
+        final Integer messageRetentionPeriod = Integer.valueOf(sqsConfig.getMessageRetentionPeriod());
         checkArgument(messageRetentionPeriod > 59 && messageRetentionPeriod < 1209601,
             "messageRetentionPeriod parameter must be between [60,1209600]");
 
-        checkArgument(isNumeric(sqsConfiguration.getMessageVisibilityTimeout()),
+        checkArgument(isNumeric(sqsConfig.getMessageVisibilityTimeout()),
             "messageVisibilityTimeout parameter must be numeric.");
 
-        final Integer messageVisibilityTimeout = Integer.valueOf(sqsConfiguration.getMessageVisibilityTimeout());
+        final Integer messageVisibilityTimeout = Integer.valueOf(sqsConfig.getMessageVisibilityTimeout());
         checkArgument(messageVisibilityTimeout >= 0 && messageVisibilityTimeout < 43200,
             "messageRetentionPeriod parameter must be between [0,43200]");
 
-        checkArgument(isNotBlank(sqsConfiguration.getQueueName()), "queueName parameter must not be empty.");
-        checkArgument(isNotBlank(sqsConfiguration.getRegion()), "region parameter must not be empty.");
+        checkArgument(isNotBlank(sqsConfig.getQueueName()), "queueName parameter must not be empty.");
+        checkArgument(isNotBlank(sqsConfig.getRegion()), "region parameter must not be empty.");
         checkArgument(Arrays.stream(Regions.values()).anyMatch(region ->
-                    region.getName().equals(sqsConfiguration.getRegion())), "region parameter must be valid.");
+                    region.getName().equals(sqsConfig.getRegion())), "region parameter must be valid.");
     }
 
     private boolean shouldCreateANewQueue(final String queueName) {

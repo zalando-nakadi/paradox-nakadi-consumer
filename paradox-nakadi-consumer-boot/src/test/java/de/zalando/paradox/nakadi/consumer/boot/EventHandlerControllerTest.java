@@ -56,6 +56,6 @@ public class EventHandlerControllerTest {
 
         final ResponseEntity<String> responseEntity = (ResponseEntity<String>) deferredResult.getResult();
         assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(responseEntity.getBody()).isEqualTo("Consumer name does not match with event type.");
+        assertThat(responseEntity.getBody()).isEqualTo("Consumer not found.");
     }
 }

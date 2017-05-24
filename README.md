@@ -454,17 +454,17 @@ public class LoggingEventErrorHandler implements EventErrorHandler {
 }
 ```
 
-If the sqs error handler is enabled, it will store the failed events to the sqs queue automatically.
+If the SQS error handler is enabled, it will store the failed events to the sqs queue automatically.
 
 Here are the configuration explanations 
 
 ```properties
-paradox.nakadi.errorhandler.sqs.enabled : If it is true, the handler is binded to context automatically.
+paradox.nakadi.errorhandler.sqs.enabled: If it is true, the handler is binded to context automatically.
 paradox.nakadi.errorhandler.sqs.queueName: The place where the failed events are stored.
-paradox.nakadi.errorhandler.sqs.region: AWS region
+paradox.nakadi.errorhandler.sqs.region: See available AWS regions : [AWS Documentation]: http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/regions/Regions.html
 paradox.nakadi.errorhandler.sqs.createQueueIfNotExists: If the parameter is true, initially, it checks the queue name in amazon then creates it if it does not exist.
-paradox.nakadi.errorhandler.sqs.messageVisibilityTimeout: The length of time (in seconds) that a message received from a queue will be invisible to other receiving components. The value must be between 0 and 43200.
-paradox.nakadi.errorhandler.sqs.messageRetentionPeriod: The amount of time that Amazon SQS will retain a message if it does not get deleted. The value must be between 60 and 1209600.
+paradox.nakadi.errorhandler.sqs.messageVisibilityTimeout: See VisibilityTimeout parameter in [AWS Documentation]: http://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html
+paradox.nakadi.errorhandler.sqs.messageRetentionPeriod: See MessageRetentionPeriod parameter in [AWS Documentation]: http://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html
 ```
      
 ### Spring boot support endpoints

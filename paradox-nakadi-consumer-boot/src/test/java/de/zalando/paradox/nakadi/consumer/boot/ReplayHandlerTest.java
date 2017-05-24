@@ -43,7 +43,7 @@ public class ReplayHandlerTest {
 
     private static final String EVENT_TYPE = "order.ORDER_RECEIVED";
 
-    private static final String CONSUMER_NAME = "orderRecievedConsumer";
+    private static final String CONSUMER_NAME = "orderReceivedConsumer";
 
     private static final EventTypePartition PARTITION = EventTypePartition.of(EventType.of(EVENT_TYPE), "0");
     private static final EventTypeCursor CURSOR = EventTypeCursor.of(PARTITION, "5");

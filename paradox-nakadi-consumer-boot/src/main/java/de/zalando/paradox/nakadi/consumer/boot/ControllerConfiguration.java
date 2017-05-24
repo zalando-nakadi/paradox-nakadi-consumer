@@ -158,7 +158,7 @@ public class ControllerConfiguration {
 
         private DeferredResult<ResponseEntity<?>> getBadDeferredResult() {
             final DeferredResult<ResponseEntity<?>> deferredResult = new DeferredResult<>();
-            deferredResult.setErrorResult(badRequest().body("Consumer name does not match with event type."));
+            deferredResult.setErrorResult(badRequest().body("Consumer not found."));
             return deferredResult;
         }
 

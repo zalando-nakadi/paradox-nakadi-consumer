@@ -5,9 +5,6 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.GetQueueUrlResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
@@ -16,12 +13,11 @@ import com.amazonaws.services.sqs.model.SendMessageResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
+import de.zalando.paradox.nakadi.consumer.core.domain.FailedEvent;
 import de.zalando.paradox.nakadi.consumer.core.http.handlers.EventErrorHandler;
 import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 
 public class SQSErrorHandler implements EventErrorHandler {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SQSErrorHandler.class);
 
     private final String queueName;
 
@@ -29,10 +25,9 @@ public class SQSErrorHandler implements EventErrorHandler {
 
     private final ObjectMapper objectMapper;
 
-    public SQSErrorHandler(final SQSConfiguration sqsConfiguration, final AmazonSQS amazonSQS,
-            final ObjectMapper objectMapper) {
+    public SQSErrorHandler(final SQSConfig sqsConfig, final AmazonSQS amazonSQS, final ObjectMapper objectMapper) {
         this.amazonSQS = amazonSQS;
-        this.queueName = sqsConfiguration.getQueueName();
+        this.queueName = sqsConfig.getQueueName();
         this.objectMapper = objectMapper;
     }
 
@@ -65,14 +60,12 @@ public class SQSErrorHandler implements EventErrorHandler {
                         queueUrl.getQueueUrl(), serializedEvent));
 
             if (sendMessageResult.getSdkHttpMetadata().getHttpStatusCode() != 200) {
-                LOGGER.error(
-                    "The result of sending event to SQS is not successful // Event body = [{}] , HttpStatusCode = [{}]",
-                    serializedEvent, sendMessageResult.getSdkHttpMetadata().getHttpStatusCode());
-                throw new IllegalStateException("The result of sending event to SQS is not successful.");
+                throw new IllegalStateException(String.format(
+                        "The result of sending event to SQS is not successful // Event body = [%s] , HttpStatusCode = [%d]",
+                        serializedEvent, sendMessageResult.getSdkHttpMetadata().getHttpStatusCode()));
             }
 
         } catch (final Exception e) {
-            LOGGER.error("Exception occurred while sending event to SQS // Event body = [{}]", rawEvent, e);
             ThrowableUtils.throwException(e);
         }
     }

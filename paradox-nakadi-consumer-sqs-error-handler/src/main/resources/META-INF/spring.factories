@@ -1,3 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSConfiguration,\
-de.zalando.paradox.nakadi.consumer.sqserrorhandler.ErrorHandlerConfiguration\

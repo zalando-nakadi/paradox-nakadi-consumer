@@ -1,6 +1,6 @@
-package de.zalando.paradox.nakadi.consumer.sqserrorhandler;
+package de.zalando.paradox.nakadi.consumer.boot;
 
-import static de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSConfiguration.DEFAULT_SQS_PROPERTIES_PREFIX;
+import static de.zalando.paradox.nakadi.consumer.boot.SQSConfiguration.DEFAULT_SQS_PROPERTIES_PREFIX;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

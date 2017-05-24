@@ -248,6 +248,7 @@ project(":paradox-nakadi-consumer-boot") {
     dependencies {
         compile(project(":paradox-nakadi-consumer-core"))
         compile(project(":paradox-nakadi-consumer-partitioned-zk"))
+        provided(project(":paradox-nakadi-consumer-sqs-error-handler"))
         compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}") {
             exclude module: 'spring-boot-starter-logging'
             exclude module: 'logback-classic'
@@ -266,18 +267,7 @@ project(":paradox-nakadi-consumer-sqs-error-handler") {
 
     dependencies {
         compile(project(":paradox-nakadi-consumer-core"))
-        provided("com.amazonaws:aws-java-sdk-sqs:${amazonSQSVersion}")
-        compile "org.slf4j:slf4j-api:${slf4jVersion}"
-        compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}") {
-            exclude module: 'spring-boot-starter-logging'
-            exclude module: 'logback-classic'
-            exclude module: 'log4j-over-slf4j'
-        }
-        compile("org.zalando.stups:spring-boot-zalando-stups-tokens:${stupsTokensVersion}")
-        compile("org.zalando.stups:stups-spring-oauth2-client:${stupsSpringOauth2ClientVersion}")
-        testCompile("org.springframework.boot:spring-boot-starter-test:${springBootVersion}")
-
-        runtime("org.apache.httpcomponents:httpclient:${httpClientVersion}")
+        compile("com.amazonaws:aws-java-sdk-sqs:${amazonSQSVersion}")
     }
 }
 
