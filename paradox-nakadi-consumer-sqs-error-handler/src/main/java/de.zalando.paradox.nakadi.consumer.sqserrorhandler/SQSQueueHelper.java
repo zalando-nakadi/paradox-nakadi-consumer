@@ -9,8 +9,6 @@ import java.util.Arrays;
 
 import javax.annotation.PostConstruct;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.amazonaws.regions.Regions;
 
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -25,7 +23,6 @@ public class SQSQueueHelper {
 
     private final AmazonSQS amazonSQS;
 
-    @Autowired
     public SQSQueueHelper(final SQSConfiguration sqsConfiguration, final AmazonSQS amazonSQS) {
         this.sqsConfiguration = sqsConfiguration;
         this.amazonSQS = amazonSQS;

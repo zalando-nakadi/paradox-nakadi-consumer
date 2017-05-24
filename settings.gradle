@@ -5,5 +5,4 @@ include 'paradox-nakadi-consumer-partitioned-zk'
 include 'paradox-nakadi-consumer-boot'
 include 'paradox-nakadi-consumer-example-boot'
 include 'paradox-nakadi-consumer-sqs-error-handler'
-include 'paradox-nakadi-consumer-sqs-error-handler-example'
 

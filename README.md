@@ -30,7 +30,6 @@ Java high level [Nakadi](https://github.com/zalando/nakadi) consumer.
     ├── paradox-nakadi-consumer-boot                        # Spring Boot bindings
     ├── paradox-nakadi-consumer-example-boot                # Spring Boot usage example
     ├── paradox-nakadi-consumer-sqs-error-handler           # Failed event handling with Amazon SQS
-    ├── paradox-nakadi-consumer-sqs-error-handler-example   # Failed event handling with Amazon SQS example
     └── README.md
 
 
