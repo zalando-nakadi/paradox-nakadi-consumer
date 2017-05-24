@@ -2,20 +2,16 @@ package de.zalando.paradox.nakadi.consumer.boot;
 
 import static de.zalando.paradox.nakadi.consumer.boot.SQSConfiguration.DEFAULT_SQS_PROPERTIES_PREFIX;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import org.springframework.stereotype.Component;
-
-import com.amazonaws.services.sqs.AmazonSQS;
 
 /**
  * SQS logging configuration class. If the Amazon sqs sdk is not in the classpath or if the enabled flag is not true,
  * neither the configurations will be loaded nor the error handler will be added to the context.
  */
 @Component
-@ConditionalOnClass(AmazonSQS.class)
 @ConditionalOnProperty(value = "enabled", prefix = DEFAULT_SQS_PROPERTIES_PREFIX, havingValue = "true")
 @ConfigurationProperties(DEFAULT_SQS_PROPERTIES_PREFIX)
 public class SQSConfiguration {

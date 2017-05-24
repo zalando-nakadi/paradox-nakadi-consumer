@@ -47,12 +47,14 @@ public class SQSErrorHandler implements EventErrorHandler {
                 "eventTypePartition.getPartition() must not be null.");
             checkNotNull(t, "exception must not be null.");
 
-            final FailedEvent failedEvent = new FailedEvent.Builder().consumerName(consumerName)
-                                                                     .eventType(eventTypePartition.getEventType())
-                                                                     .failedTimeInMilliSeconds(System
-                                                                             .currentTimeMillis()).offset(offset)
-                                                                     .partition(eventTypePartition.getPartition())
-                                                                     .rawEvent(rawEvent).throwable(t).build();
+            final FailedEvent failedEvent = new FailedEvent();
+            failedEvent.setConsumerName(consumerName);
+            failedEvent.setEventType(eventTypePartition.getEventType());
+            failedEvent.setFailedTimeInMilliSeconds(System.currentTimeMillis());
+            failedEvent.setOffset(offset);
+            failedEvent.setPartition(eventTypePartition.getPartition());
+            failedEvent.setRawEvent(rawEvent);
+            failedEvent.setThrowable(t);
 
             final String serializedEvent = objectMapper.writeValueAsString(failedEvent);
             final GetQueueUrlResult queueUrl = amazonSQS.getQueueUrl(queueName);

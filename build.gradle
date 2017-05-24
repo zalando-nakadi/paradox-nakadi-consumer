@@ -248,7 +248,7 @@ project(":paradox-nakadi-consumer-boot") {
     dependencies {
         compile(project(":paradox-nakadi-consumer-core"))
         compile(project(":paradox-nakadi-consumer-partitioned-zk"))
-        provided(project(":paradox-nakadi-consumer-sqs-error-handler"))
+        compileOnly(project(":paradox-nakadi-consumer-sqs-error-handler"))
         compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}") {
             exclude module: 'spring-boot-starter-logging'
             exclude module: 'logback-classic'

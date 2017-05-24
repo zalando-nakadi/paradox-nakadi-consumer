@@ -2,7 +2,6 @@ package de.zalando.paradox.nakadi.consumer.boot;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import org.springframework.context.annotation.Bean;
@@ -19,7 +18,6 @@ import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSConfig;
 import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSErrorHandler;
 import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSQueueHelper;
 
-@ConditionalOnClass(AmazonSQS.class)
 @ConditionalOnProperty(value = "enabled", prefix = SQSConfiguration.DEFAULT_SQS_PROPERTIES_PREFIX, havingValue = "true")
 @Configuration
 public class ErrorHandlerConfiguration {
