@@ -454,18 +454,16 @@ public class LoggingEventErrorHandler implements EventErrorHandler {
 }
 ```
 
-If the SQS error handler is enabled, it will store the failed events to the sqs queue automatically.
+If the SQS error handler is enabled, it will store the failed events to the SQS queue automatically.
 
 Here are the configuration explanations 
 
-```properties
 paradox.nakadi.errorhandler.sqs.enabled: If it is true, the handler is binded to context automatically.
 paradox.nakadi.errorhandler.sqs.queueName: The place where the failed events are stored.
 paradox.nakadi.errorhandler.sqs.region: See available AWS regions : [AWS Documentation]: http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/regions/Regions.html
 paradox.nakadi.errorhandler.sqs.createQueueIfNotExists: If the parameter is true, initially, it checks the queue name in amazon then creates it if it does not exist.
 paradox.nakadi.errorhandler.sqs.messageVisibilityTimeout: See VisibilityTimeout parameter in [AWS Documentation]: http://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html
 paradox.nakadi.errorhandler.sqs.messageRetentionPeriod: See MessageRetentionPeriod parameter in [AWS Documentation]: http://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html
-```
      
 ### Spring boot support endpoints
 
