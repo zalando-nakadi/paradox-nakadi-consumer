@@ -127,7 +127,7 @@ public class SQSQueueHelperTest {
 
     @Test
     public void testShouldNotCreateANewQueueIfExists() {
-        when(sqsConfiguration.getMessageRetentionPeriod()).thenReturn(randomNumeric(3));
+        when(sqsConfiguration.getMessageRetentionPeriod()).thenReturn(randomNumeric(5));
         when(sqsConfiguration.isCreateQueueIfNotExists()).thenReturn(true);
         when(sqsConfiguration.getMessageVisibilityTimeout()).thenReturn(randomNumeric(4));
         when(sqsConfiguration.getQueueName()).thenReturn(randomAlphabetic(10));
