@@ -16,10 +16,10 @@ public class LoggingEventErrorHandler implements EventErrorHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingEventErrorHandler.class);
 
     @Override
-    public void onError(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String offset,
-            final String rawEvent) {
+    public void onError(final String consumerName, final Throwable t, final EventTypePartition eventTypePartition,
+            @Nullable final String offset, final String rawEvent) {
         LOGGER.error(
-            "Failed Event // Event Partition = [{}] , Event Type = [{}] , Event Offset = [{}] , Raw Event = [{}] //",
-            eventTypePartition.getPartition(), eventTypePartition.getEventType(), offset, rawEvent, t);
+            "Failed Event // Consumer Name = [{}] , Event Partition = [{}] , Event Type = [{}] , Event Offset = [{}] , Raw Event = [{}] //",
+            consumerName, eventTypePartition.getPartition(), eventTypePartition.getEventType(), offset, rawEvent, t);
     }
 }

@@ -3,6 +3,7 @@ package de.zalando.paradox.nakadi.consumer.core.http.handlers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -33,6 +34,8 @@ import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionCoordinator;
 
 public class BatchEventsResponseHandlerTest {
 
+    private static final String CONSUMER_NAME = "consumerName";
+
     @Mock
     private PartitionCoordinator coordinator;
 
@@ -45,7 +48,8 @@ public class BatchEventsResponseHandlerTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         when(delegate.getEventClass()).thenReturn(OrderReceived.class);
-        this.handler = new BatchEventsResponseHandler<>(EVENT_TYPE_PARTITION, OBJECT_MAPPER, coordinator, delegate);
+        this.handler = new BatchEventsResponseHandler<>(CONSUMER_NAME, EVENT_TYPE_PARTITION, OBJECT_MAPPER, coordinator,
+                delegate);
     }
 
     @Test
@@ -124,6 +128,6 @@ public class BatchEventsResponseHandlerTest {
 
         verify(delegate, times(1)).onEvent(any(), any());
         verify(coordinator, times(1)).commit(any());
-        verify(coordinator, times(1)).error(any(), any(), any(), any());
+        verify(coordinator, times(1)).error(anyString(), any(), any(), any(), any());
     }
 }

@@ -4,4 +4,6 @@ de.zalando.paradox.nakadi.consumer.boot.EventReceiverRegistryConfiguration,\
 de.zalando.paradox.nakadi.consumer.boot.ControllerConfiguration,\
 de.zalando.paradox.nakadi.consumer.boot.NakadiEventErrorHandlerConfiguration,\
 de.zalando.paradox.nakadi.consumer.boot.ClientConfiguration,\
-de.zalando.paradox.nakadi.consumer.boot.NakadiSettingsConfiguration
+de.zalando.paradox.nakadi.consumer.boot.NakadiSettingsConfiguration,\
+de.zalando.paradox.nakadi.consumer.boot.SQSConfiguration,\
+de.zalando.paradox.nakadi.consumer.boot.ErrorHandlerConfiguration

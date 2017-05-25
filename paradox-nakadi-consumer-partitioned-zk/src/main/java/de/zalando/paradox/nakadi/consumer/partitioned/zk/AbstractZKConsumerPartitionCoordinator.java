@@ -51,9 +51,9 @@ abstract class AbstractZKConsumerPartitionCoordinator extends AbstractPartitionC
     }
 
     @Override
-    public void error(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String offset,
-            final String rawEvent) {
-        offsetManagement.error(t, eventTypePartition, offset, rawEvent);
+    public void error(final String consumerName, final Throwable t, final EventTypePartition eventTypePartition,
+            @Nullable final String offset, final String rawEvent) {
+        offsetManagement.error(consumerName, t, eventTypePartition, offset, rawEvent);
     }
 
     @Override

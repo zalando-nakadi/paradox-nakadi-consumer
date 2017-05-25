@@ -20,9 +20,9 @@ public class RawContentResponseHandler extends AbstractResponseHandler {
 
     private final RawContentHandler delegate;
 
-    public RawContentResponseHandler(final EventTypePartition eventTypePartition, final ObjectMapper jsonMapper,
-            final PartitionCoordinator coordinator, final RawContentHandler delegate) {
-        super(eventTypePartition, coordinator,
+    public RawContentResponseHandler(final String consumerName, final EventTypePartition eventTypePartition,
+            final ObjectMapper jsonMapper, final PartitionCoordinator coordinator, final RawContentHandler delegate) {
+        super(consumerName, eventTypePartition, coordinator,
             LoggingUtils.getLogger(RawContentResponseHandler.class, eventTypePartition), jsonMapper);
         this.delegate = delegate;
     }
@@ -49,7 +49,7 @@ public class RawContentResponseHandler extends AbstractResponseHandler {
                 delegate.onEvent(lastCursor, content);
             } catch (Throwable t) {
                 LOGGER.error("Handler error at firstCursor [{}] , lastCursor [{}]", firstCursor, lastCursor);
-                coordinator.error(t, eventTypePartition, lastCursor.getOffset(), content);
+                coordinator.error(consumerName, t, eventTypePartition, lastCursor.getOffset(), content);
             }
 
             coordinator.commit(lastCursor);

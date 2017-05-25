@@ -39,10 +39,13 @@ public class RawEventResponseHandlerTest {
 
     private RawEventResponseHandler handler;
 
+    private static final String CONSUMER_NAME = "consumerName";
+
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        this.handler = new RawEventResponseHandler(EVENT_TYPE_PARTITION, OBJECT_MAPPER, coordinator, delegate);
+        this.handler = new RawEventResponseHandler(CONSUMER_NAME, EVENT_TYPE_PARTITION, OBJECT_MAPPER, coordinator,
+                delegate);
     }
 
     @Test
