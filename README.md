@@ -505,6 +505,24 @@ curl -XPOST http://host:port/nakadi/event-receivers/restart
     ```sh
        curl --data-binary @0-16516140.json -H "Content-Type: application/json" -X POST 'http://localhost:8082/nakadi/event-handlers/event_types/order.ORDER_RECEIVED/partitions/0/restores'
     ```    
+#### Replay failed events
 
+1. Get list of failed event sources
 
+    ```sh
+        curl -X GET 'http://host:port/nakadi/failed-event-sources'
+    ``` 
+    
+2. Replay failed events from sources
 
+    ```sh
+        curl -X POST 'http://host:port/nakadi/failed-event-sources/<FAILED_EVENT_SOURCE_NAME>/?<NUMBER_OF_FAILED_EVENTS_WILL_BE_REPLAYED>&break_processing_on_exception=true'
+    ``` 
+    
+`break_processing_on_exception` is used to break the flow when there is exception. The default value is false.
+
+3. (Optional) Get approximately number of failed events
+
+    ```sh
+        curl -X GET 'http://host:port/nakadi/failed-event-sources/<FAILED_EVENT_SOURCE_NAME>'
+    ``` 
