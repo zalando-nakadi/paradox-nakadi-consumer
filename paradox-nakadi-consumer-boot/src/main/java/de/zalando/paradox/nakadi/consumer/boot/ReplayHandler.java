@@ -1,9 +1,13 @@
 package de.zalando.paradox.nakadi.consumer.boot;
 
+import java.util.function.Predicate;
+
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.zalando.paradox.nakadi.consumer.boot.components.EventTypeConsumer;
 import de.zalando.paradox.nakadi.consumer.core.DefaultObjectMapper;
 import de.zalando.paradox.nakadi.consumer.core.EventHandler;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
@@ -39,6 +43,13 @@ class ReplayHandler {
             ThrowableUtils.throwException(t);
         }
     };
+
+    Predicate<EventTypeConsumer> filterConsumer(@Nonnull final String eventName, @Nullable final String consumerName) {
+        return
+            elem ->
+                elem.getEventName().equals(eventName)
+                    && (null == consumerName || elem.getConsumerName().equals(consumerName));
+    }
 
     EventTypeCursor getQueryCursor(final EventTypeCursor cursor) {
         return EventTypeCursor.of(cursor.getEventTypePartition(), getQueryOffset(cursor));
