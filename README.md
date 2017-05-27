@@ -516,7 +516,7 @@ curl -XPOST http://host:port/nakadi/event-receivers/restart
 2. Replay failed events from sources
 
     ```sh
-        curl -X POST 'http://host:port/nakadi/failed-event-sources/<FAILED_EVENT_SOURCE_NAME>/?<NUMBER_OF_FAILED_EVENTS_WILL_BE_REPLAYED>&break_processing_on_exception=true'
+        curl -X POST 'http://host:port/nakadi/failed-event-sources/<FAILED_EVENT_SOURCE_NAME>/?number_of_failed_events=<NUMBER_OF_FAILED_EVENTS_WILL_BE_REPLAYED>&break_processing_on_exception=true'
     ``` 
     
 `break_processing_on_exception` is used to break the flow when there is exception. The default value is false.
