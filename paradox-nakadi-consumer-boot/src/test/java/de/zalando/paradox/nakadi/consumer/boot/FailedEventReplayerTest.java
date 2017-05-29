@@ -16,20 +16,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collections;
 import java.util.Optional;
-
-import org.apache.commons.lang3.RandomUtils;
-
-import org.assertj.core.api.Assertions;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import de.zalando.paradox.nakadi.consumer.boot.components.EventReceiverRegistry;
 import de.zalando.paradox.nakadi.consumer.boot.components.EventTypeConsumer;
-import de.zalando.paradox.nakadi.consumer.boot.components.FailedEventSourceMap;
 import de.zalando.paradox.nakadi.consumer.core.EventHandler;
 import de.zalando.paradox.nakadi.consumer.core.FailedEventSource;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
@@ -38,13 +32,11 @@ import de.zalando.paradox.nakadi.consumer.core.domain.FailedEvent;
 
 public class FailedEventReplayerTest {
 
-    static final String EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE = "Event source name is not available.";
+    private static final String EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE = "Event source name is not available.";
 
     private static final String TEST_EVENT_SOURCE_NAME = randomAlphabetic(10);
 
     private FailedEventReplayer failedEventReplayer;
-
-    private FailedEventSourceMap failedEventSourceMap;
 
     private EventReceiverRegistry eventReceiverRegistry;
 
@@ -58,30 +50,26 @@ public class FailedEventReplayerTest {
         replayHandler = mock(ReplayHandler.class);
 
         failedEventSource = mock(FailedEventSource.class);
+        when(failedEventSource.getEventSourceName()).thenReturn(TEST_EVENT_SOURCE_NAME);
         eventReceiverRegistry = mock(EventReceiverRegistry.class);
 
-        final Map<String, FailedEventSource<FailedEvent>> eventSourceMap = new HashMap<>();
-        eventSourceMap.put(TEST_EVENT_SOURCE_NAME, failedEventSource);
-
-        failedEventSourceMap = new FailedEventSourceMap(eventSourceMap);
-
-        failedEventReplayer = new FailedEventReplayer(eventReceiverRegistry, failedEventSourceMap, replayHandler);
+        failedEventReplayer = new FailedEventReplayer(eventReceiverRegistry,
+                Collections.singletonList(failedEventSource), replayHandler);
     }
 
     @Test
     public void testShouldFailWhileGettingSizeOfEventsWhenTheEventNameIsNotAvailable() {
-        Assertions.assertThatThrownBy(() ->
-                          failedEventReplayer.getApproximatelyTotalNumberOfFailedEvents(randomAlphabetic(2)))
-                  .isInstanceOf(IllegalArgumentException.class).hasMessage(EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
+        assertThatThrownBy(() -> failedEventReplayer.getTotalNumberOfFailedEvents(randomAlphabetic(2))).isInstanceOf(
+            IllegalArgumentException.class).hasMessage(EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
     }
 
     @Test
     public void testShouldReturnSizeOfEvents() {
 
-        final long actualApproximatelyTotalNumberOfFailedEvents = RandomUtils.nextLong(1, 10);
-        when(failedEventSource.getSize()).thenReturn(actualApproximatelyTotalNumberOfFailedEvents);
-        assertThat(failedEventReplayer.getApproximatelyTotalNumberOfFailedEvents(TEST_EVENT_SOURCE_NAME)).isEqualTo(
-            actualApproximatelyTotalNumberOfFailedEvents);
+        final long actualTotalNumberOfFailedEvents = nextLong(1, 10);
+        when(failedEventSource.getSize()).thenReturn(actualTotalNumberOfFailedEvents);
+        assertThat(failedEventReplayer.getTotalNumberOfFailedEvents(TEST_EVENT_SOURCE_NAME)).isEqualTo(
+            actualTotalNumberOfFailedEvents);
     }
 
     @Test
@@ -92,8 +80,8 @@ public class FailedEventReplayerTest {
     @Test
     public void testShouldFailWhenExceptionOccurredWhileReplaying() {
 
-        final long approximatelyTotalNumberOfFailedEvents = RandomUtils.nextLong(1, 10);
-        when(failedEventSource.getSize()).thenReturn(approximatelyTotalNumberOfFailedEvents);
+        final long totalNumberOfFailedEvents = nextLong(1, 10);
+        when(failedEventSource.getSize()).thenReturn(totalNumberOfFailedEvents);
 
         when(failedEventSource.getFailedEvent()).thenReturn(Optional.of(generateFailedEvent()));
 
@@ -114,8 +102,8 @@ public class FailedEventReplayerTest {
     @Test
     public void testShouldNotFailWhenExceptionOccurredWhileReplaying() {
 
-        final long approximatelyTotalNumberOfFailedEvents = RandomUtils.nextLong(3, 10);
-        when(failedEventSource.getSize()).thenReturn(approximatelyTotalNumberOfFailedEvents);
+        final long totalNumberOfFailedEvents = nextLong(3, 10);
+        when(failedEventSource.getSize()).thenReturn(totalNumberOfFailedEvents);
 
         when(failedEventSource.getFailedEvent()).thenReturn(Optional.of(generateFailedEvent()));
 
@@ -127,24 +115,24 @@ public class FailedEventReplayerTest {
 
         failedEventReplayer.replay(TEST_EVENT_SOURCE_NAME, 20L, false);
 
-        verify(eventReceiverRegistry, times((int) approximatelyTotalNumberOfFailedEvents)).getEventTypeConsumerHandler(
-            any(EventTypeConsumer.class));
-        verify(replayHandler, times((int) approximatelyTotalNumberOfFailedEvents)).handle(anyString(),
-            any(EventHandler.class), any(EventTypePartition.class), anyString());
+        verify(eventReceiverRegistry, times((int) totalNumberOfFailedEvents)).getEventTypeConsumerHandler(any(
+                EventTypeConsumer.class));
+        verify(replayHandler, times((int) totalNumberOfFailedEvents)).handle(anyString(), any(EventHandler.class),
+            any(EventTypePartition.class), anyString());
     }
 
     @Test
     public void testShouldFailIfEventHandlerIsNotFound() {
 
-        final long approximatelyTotalNumberOfFailedEvents = RandomUtils.nextLong(3, 10);
-        when(failedEventSource.getSize()).thenReturn(approximatelyTotalNumberOfFailedEvents);
+        final long totalNumberOfFailedEvents = nextLong(3, 10);
+        when(failedEventSource.getSize()).thenReturn(totalNumberOfFailedEvents);
 
         when(failedEventSource.getFailedEvent()).thenReturn(Optional.of(generateFailedEvent()));
 
         failedEventReplayer.replay(TEST_EVENT_SOURCE_NAME, 20L, false);
 
-        verify(eventReceiverRegistry, times((int) approximatelyTotalNumberOfFailedEvents)).getEventTypeConsumerHandler(
-            any(EventTypeConsumer.class));
+        verify(eventReceiverRegistry, times((int) totalNumberOfFailedEvents)).getEventTypeConsumerHandler(any(
+                EventTypeConsumer.class));
         verify(replayHandler, never()).handle(anyString(), any(EventHandler.class), any(EventTypePartition.class),
             anyString());
     }
@@ -154,8 +142,8 @@ public class FailedEventReplayerTest {
 
         final FailedEvent failedEvent = generateFailedEvent();
 
-        final long approximatelyTotalNumberOfFailedEvents = RandomUtils.nextLong(3, 10);
-        when(failedEventSource.getSize()).thenReturn(approximatelyTotalNumberOfFailedEvents);
+        final long totalNumberOfFailedEvents = nextLong(3, 10);
+        when(failedEventSource.getSize()).thenReturn(totalNumberOfFailedEvents);
 
         when(failedEventSource.getFailedEvent()).thenReturn(Optional.of(failedEvent));
         when(eventReceiverRegistry.getEventTypeConsumerHandler(any(EventTypeConsumer.class))).thenReturn(mock(
@@ -163,10 +151,10 @@ public class FailedEventReplayerTest {
 
         failedEventReplayer.replay(TEST_EVENT_SOURCE_NAME, 20L, false);
 
-        verify(eventReceiverRegistry, times((int) approximatelyTotalNumberOfFailedEvents)).getEventTypeConsumerHandler(
-            any(EventTypeConsumer.class));
-        verify(replayHandler, times((int) approximatelyTotalNumberOfFailedEvents)).handle(anyString(),
-            any(EventHandler.class), any(EventTypePartition.class), anyString());
+        verify(eventReceiverRegistry, times((int) totalNumberOfFailedEvents)).getEventTypeConsumerHandler(any(
+                EventTypeConsumer.class));
+        verify(replayHandler, times((int) totalNumberOfFailedEvents)).handle(anyString(), any(EventHandler.class),
+            any(EventTypePartition.class), anyString());
     }
 
     @Test
@@ -174,8 +162,8 @@ public class FailedEventReplayerTest {
 
         final FailedEvent failedEvent = generateFailedEvent();
 
-        final long approximatelyTotalNumberOfFailedEvents = RandomUtils.nextLong(3, 10);
-        when(failedEventSource.getSize()).thenReturn(approximatelyTotalNumberOfFailedEvents);
+        final long totalNumberOfFailedEvents = nextLong(3, 10);
+        when(failedEventSource.getSize()).thenReturn(totalNumberOfFailedEvents);
 
         when(failedEventSource.getFailedEvent()).thenReturn(Optional.of(failedEvent));
         when(eventReceiverRegistry.getEventTypeConsumerHandler(any(EventTypeConsumer.class))).thenReturn(mock(

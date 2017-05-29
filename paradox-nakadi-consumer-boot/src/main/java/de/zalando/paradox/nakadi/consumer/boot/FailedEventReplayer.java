@@ -5,60 +5,60 @@ import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
-import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.zalando.paradox.nakadi.consumer.boot.components.EventReceiverRegistry;
 import de.zalando.paradox.nakadi.consumer.boot.components.EventTypeConsumer;
-import de.zalando.paradox.nakadi.consumer.boot.components.FailedEventSourceMap;
 import de.zalando.paradox.nakadi.consumer.core.EventHandler;
 import de.zalando.paradox.nakadi.consumer.core.FailedEventSource;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
 import de.zalando.paradox.nakadi.consumer.core.domain.FailedEvent;
 
-@Component
 public class FailedEventReplayer {
 
     private final EventReceiverRegistry eventReceiverRegistry;
 
-    private final FailedEventSourceMap failedEventSourceMap;
+    private final Map<String, FailedEventSource> failedEventSourceMap;
 
     private final ReplayHandler replayHandler;
 
     private static final String EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE = "Event source name is not available.";
 
-    @Autowired
+    private static final Logger LOGGER = LoggerFactory.getLogger(FailedEventReplayer.class);
+
     public FailedEventReplayer(final EventReceiverRegistry eventReceiverRegistry,
-            final FailedEventSourceMap failedEventSourceMap, final ReplayHandler replayHandler) {
+            final List<FailedEventSource> failedEventSources, final ReplayHandler replayHandler) {
         this.eventReceiverRegistry = eventReceiverRegistry;
-        this.failedEventSourceMap = failedEventSourceMap;
         this.replayHandler = replayHandler;
+
+        failedEventSourceMap = failedEventSources.stream().collect(Collectors.toMap(
+                    FailedEventSource::getEventSourceName, Function.identity()));
     }
 
-    public Long getApproximatelyTotalNumberOfFailedEvents(final String eventSourceName) {
-        checkArgument(failedEventSourceMap.getFailedEventSourceMap().containsKey(eventSourceName),
-            EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
-        return failedEventSourceMap.getFailedEventSourceMap().get(eventSourceName).getSize();
+    public Long getTotalNumberOfFailedEvents(final String eventSourceName) {
+        checkArgument(failedEventSourceMap.containsKey(eventSourceName), EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
+        return failedEventSourceMap.get(eventSourceName).getSize();
     }
 
     public Collection<String> getFailedEventSources() {
-        return failedEventSourceMap.getFailedEventSourceMap().keySet();
+        return failedEventSourceMap.keySet();
     }
 
     public void replay(final String eventSourceName, final Long numberOfFailedEvents,
             final boolean breakProcessingOnException) {
-        checkArgument(failedEventSourceMap.getFailedEventSourceMap().containsKey(eventSourceName),
-            EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
+        checkArgument(failedEventSourceMap.containsKey(eventSourceName), EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
 
-        final FailedEventSource<FailedEvent> failedEventSource = failedEventSourceMap.getFailedEventSourceMap().get(
-                eventSourceName);
-        final long approximatelyTotalNumberOfFailedEvents = failedEventSource.getSize();
+        final FailedEventSource<FailedEvent> failedEventSource = failedEventSourceMap.get(eventSourceName);
+        final long totalNumberOfFailedEvents = failedEventSource.getSize();
 
-        final long upperBound = numberOfFailedEvents > approximatelyTotalNumberOfFailedEvents
-            ? approximatelyTotalNumberOfFailedEvents : numberOfFailedEvents;
+        final long upperBound = Math.min(numberOfFailedEvents, totalNumberOfFailedEvents);
 
         Optional<FailedEvent> failedEventOptional = Optional.empty();
         for (long counter = 0; counter < upperBound; counter++) {
@@ -71,6 +71,9 @@ public class FailedEventReplayer {
                     throw new IllegalStateException(String.format(
                             "Exception occurred while processing the event. Event = [%s]",
                             failedEventOptional.orElse(null)), ex);
+                } else {
+                    LOGGER.error(String.format("Exception occurred while processing the event source = [%s]",
+                            eventSourceName), ex);
                 }
             }
         }

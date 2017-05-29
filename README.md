@@ -521,7 +521,7 @@ curl -XPOST http://host:port/nakadi/event-receivers/restart
     
 `break_processing_on_exception` is used to break the flow when there is exception. The default value is false.
 
-3. (Optional) Get approximately number of failed events
+3. (Optional) Get number of failed events
 
     ```sh
         curl -X GET 'http://host:port/nakadi/failed-event-sources/<FAILED_EVENT_SOURCE_NAME>'

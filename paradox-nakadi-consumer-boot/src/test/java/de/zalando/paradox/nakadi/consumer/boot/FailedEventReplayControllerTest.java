@@ -62,7 +62,7 @@ public class FailedEventReplayControllerTest {
     public void testShouldReturnSizeOfFailedEvents() throws Exception {
         final String failedEventSourceName = randomAlphabetic(10);
         final int sizeOfFailedEvents = RandomUtils.nextInt(1, 10);
-        when(failedEventReplayer.getApproximatelyTotalNumberOfFailedEvents(failedEventSourceName)).thenReturn((long)
+        when(failedEventReplayer.getTotalNumberOfFailedEvents(failedEventSourceName)).thenReturn((long)
             sizeOfFailedEvents);
 
         mockMvc.perform(get("/nakadi/failed-event-sources/" + failedEventSourceName)).andExpect(status().isOk())

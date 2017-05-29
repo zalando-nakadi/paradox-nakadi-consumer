@@ -1,6 +1,9 @@
 package de.zalando.paradox.nakadi.consumer.boot;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +14,6 @@ import org.springframework.context.annotation.Configuration;
 
 import de.zalando.paradox.nakadi.consumer.boot.components.EventErrorHandlerList;
 import de.zalando.paradox.nakadi.consumer.boot.components.EventReceiverRegistry;
-import de.zalando.paradox.nakadi.consumer.boot.components.FailedEventSourceMap;
 import de.zalando.paradox.nakadi.consumer.core.FailedEventSource;
 import de.zalando.paradox.nakadi.consumer.core.http.handlers.EventErrorHandler;
 
@@ -36,23 +38,9 @@ public class NakadiEventErrorHandlerConfiguration {
     }
 
     @Bean
-    public FailedEventSourceMap failedEventSourceMap() {
-
-        final Map<String, FailedEventSource> failedEventSourceMap = applicationContext.getBeansOfType(
-                FailedEventSource.class);
-
-        if (null != failedEventSourceMap) {
-            return new FailedEventSourceMap(failedEventSourceMap.entrySet().stream().collect(Collectors.toMap(k ->
-                                k.getValue().getEventSourceName(),
-                            Map.Entry::getValue)));
-        } else {
-            return new FailedEventSourceMap();
-        }
-    }
-
-    @Bean
     public FailedEventReplayer failedEventHandler(final EventReceiverRegistry eventReceiverRegistry,
-            final FailedEventSourceMap failedEventSourceMap) {
-        return new FailedEventReplayer(eventReceiverRegistry, failedEventSourceMap, new ReplayHandler());
+            final Optional<List<FailedEventSource>> failedEventSources) {
+        return new FailedEventReplayer(eventReceiverRegistry, failedEventSources.orElse(Collections.emptyList()),
+                new ReplayHandler());
     }
 }

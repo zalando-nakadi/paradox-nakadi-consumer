@@ -57,10 +57,9 @@ public class ControllerConfiguration {
         }
 
         @RequestMapping(value = "/{event_source_name:.+}", produces = MediaType.APPLICATION_JSON_VALUE)
-        public NumberOfFailedEventsResponse getApproximatelyTotalNumberOfFailedEvents(
+        public NumberOfFailedEventsResponse getTotalNumberOfFailedEvents(
                 @PathVariable("event_source_name") final String eventSourceName) {
-            return new NumberOfFailedEventsResponse(failedEventReplayer.getApproximatelyTotalNumberOfFailedEvents(
-                        eventSourceName));
+            return new NumberOfFailedEventsResponse(failedEventReplayer.getTotalNumberOfFailedEvents(eventSourceName));
         }
 
         @RequestMapping(

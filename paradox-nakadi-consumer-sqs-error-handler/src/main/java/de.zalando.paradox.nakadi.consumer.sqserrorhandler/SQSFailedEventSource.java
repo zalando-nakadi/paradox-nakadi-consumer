@@ -1,5 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.sqserrorhandler;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Collections;
 import java.util.Optional;
 
@@ -102,14 +104,9 @@ public class SQSFailedEventSource implements FailedEventSource<SQSFailedEvent> {
     }
 
     private String getQueueUrl(final String queueName) {
-
         final GetQueueUrlResult queueUrl = amazonSQS.getQueueUrl(queueName);
-
-        if (queueUrl.getSdkHttpMetadata().getHttpStatusCode() != 200) {
-            throw new IllegalStateException(String.format("The queue url was not retrieved. Queue name = [%s]",
-                    queueName));
-        }
-
+        checkNotNull(queueUrl.getQueueUrl(),
+            String.format("The queue url was not retrieved. Queue name = [%s]", queueName));
         return queueUrl.getQueueUrl();
     }
 }

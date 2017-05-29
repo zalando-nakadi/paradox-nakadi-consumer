@@ -65,6 +65,7 @@ public class SQSFailedEventSourceTest {
         final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
         when(responseMetadata.getHttpStatusCode()).thenReturn(200);
         getQueueUrlResult.setSdkHttpMetadata(responseMetadata);
+        getQueueUrlResult.setQueueUrl(randomAlphabetic(10));
 
         when(amazonSQS.getQueueUrl(queueName)).thenReturn(getQueueUrlResult);
 
@@ -95,12 +96,12 @@ public class SQSFailedEventSourceTest {
         when(amazonSQS.getQueueUrl(anyString())).thenReturn(getQueueUrlResult);
 
         assertThatThrownBy(() -> new SQSFailedEventSource(sqsConfig, amazonSQS, objectMapper)).isInstanceOf(
-            IllegalStateException.class).hasMessageContaining("The queue url was not retrieved. Queue name =");
+            NullPointerException.class).hasMessageContaining("The queue url was not retrieved. Queue name =");
         verify(amazonSQS).getQueueUrl(anyString());
     }
 
     @Test
-    public void testShouldFailWhileGettingApproximatelyTotalNumberOfFailedEvents() {
+    public void testShouldFailWhileGettingTotalNumberOfFailedEvents() {
 
         final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
         when(responseMetadata.getHttpStatusCode()).thenReturn(400);
@@ -115,14 +116,14 @@ public class SQSFailedEventSourceTest {
     }
 
     @Test
-    public void testShouldReturnApproximatelyTotalNumberOfFailedEvents() {
+    public void testShouldReturnTotalNumberOfFailedEvents() {
 
         final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
         when(responseMetadata.getHttpStatusCode()).thenReturn(200);
 
-        final String approximatelyTotalNumberOfFailedEvents = RandomStringUtils.randomNumeric(4);
+        final String totalNumberOfFailedEvents = RandomStringUtils.randomNumeric(4);
         final Map<String, String> attributes = new HashMap<>();
-        attributes.put(QueueAttributeName.ApproximateNumberOfMessages.name(), approximatelyTotalNumberOfFailedEvents);
+        attributes.put(QueueAttributeName.ApproximateNumberOfMessages.name(), totalNumberOfFailedEvents);
 
         final GetQueueAttributesResult getQueueAttributesResult = new GetQueueAttributesResult();
         getQueueAttributesResult.setSdkHttpMetadata(responseMetadata);
@@ -130,11 +131,11 @@ public class SQSFailedEventSourceTest {
 
         when(amazonSQS.getQueueAttributes(any(GetQueueAttributesRequest.class))).thenReturn(getQueueAttributesResult);
 
-        assertThat(sqsFailedEventSource.getSize()).isEqualTo(Long.valueOf(approximatelyTotalNumberOfFailedEvents));
+        assertThat(sqsFailedEventSource.getSize()).isEqualTo(Long.valueOf(totalNumberOfFailedEvents));
     }
 
     @Test
-    public void testShouldReturnDefaultApproximatelyTotalNumberOfFailedEvents() {
+    public void testShouldReturnDefaultTotalNumberOfFailedEvents() {
         final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
         when(responseMetadata.getHttpStatusCode()).thenReturn(200);
 
@@ -147,7 +148,7 @@ public class SQSFailedEventSourceTest {
     }
 
     @Test
-    public void testShouldReturnDefaultApproximatelyTotalNumberOfFailedEventsWhenThereIsNoQueueAttributes() {
+    public void testShouldReturnDefaultTotalNumberOfFailedEventsWhenThereIsNoQueueAttributes() {
         final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
         when(responseMetadata.getHttpStatusCode()).thenReturn(200);
 
