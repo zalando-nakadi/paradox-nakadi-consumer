@@ -2,6 +2,8 @@ package de.zalando.paradox.nakadi.consumer.boot;
 
 import static java.util.Objects.requireNonNull;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Collection;
 import java.util.Optional;
 
@@ -26,32 +28,7 @@ public class FailedEventReplayer {
 
     private final ReplayHandler replayHandler;
 
-    private static final FailedEventSource<FailedEvent> NON_EXIST_FAILED_EVENT_SOURCE =
-        new FailedEventSource<FailedEvent>() {
-
-            private static final String EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE =
-                "Event source name is not available.";
-
-            @Override
-            public Optional<FailedEvent> getFailedEvent() {
-                throw new IllegalArgumentException(EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
-            }
-
-            @Override
-            public void commit(final FailedEvent failedEvent) {
-                throw new IllegalArgumentException(EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
-            }
-
-            @Override
-            public String getEventSourceName() {
-                throw new IllegalArgumentException(EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
-            }
-
-            @Override
-            public long getSize() {
-                throw new IllegalArgumentException(EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
-            }
-        };
+    private static final String EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE = "Event source name is not available.";
 
     @Autowired
     public FailedEventReplayer(final EventReceiverRegistry eventReceiverRegistry,
@@ -62,8 +39,9 @@ public class FailedEventReplayer {
     }
 
     public Long getApproximatelyTotalNumberOfFailedEvents(final String eventSourceName) {
-        return failedEventSourceMap.getFailedEventSourceMap()
-                                   .getOrDefault(eventSourceName, NON_EXIST_FAILED_EVENT_SOURCE).getSize();
+        checkArgument(failedEventSourceMap.getFailedEventSourceMap().containsKey(eventSourceName),
+            EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
+        return failedEventSourceMap.getFailedEventSourceMap().get(eventSourceName).getSize();
     }
 
     public Collection<String> getFailedEventSources() {
@@ -72,9 +50,11 @@ public class FailedEventReplayer {
 
     public void replay(final String eventSourceName, final Long numberOfFailedEvents,
             final boolean breakProcessingOnException) {
-        final FailedEventSource<FailedEvent> failedEventSource = failedEventSourceMap.getFailedEventSourceMap()
-                                                                                     .getOrDefault(eventSourceName,
-                                                                                         NON_EXIST_FAILED_EVENT_SOURCE);
+        checkArgument(failedEventSourceMap.getFailedEventSourceMap().containsKey(eventSourceName),
+            EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
+
+        final FailedEventSource<FailedEvent> failedEventSource = failedEventSourceMap.getFailedEventSourceMap().get(
+                eventSourceName);
         final long approximatelyTotalNumberOfFailedEvents = failedEventSource.getSize();
 
         final long upperBound = numberOfFailedEvents > approximatelyTotalNumberOfFailedEvents

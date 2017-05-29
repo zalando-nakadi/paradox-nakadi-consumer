@@ -97,7 +97,7 @@ public class SQSFailedEventSource implements FailedEventSource<SQSFailedEvent> {
             return sqsFailedEvent;
         } catch (final Exception e) {
             throw new IllegalStateException(String.format(
-                    "Exception occurred during deserialization. Message id = [%s]", message.getMessageId()));
+                    "Exception occurred during deserialization. Message id = [%s]", message.getMessageId()), e);
         }
     }
 

@@ -12,7 +12,7 @@ public interface FailedEventSource<T extends FailedEvent> {
     /**
      * It will return only one failed event if it exists in the source.
      *
-     * @return  Optional<T>
+     * @return  Optional
      */
     Optional<T> getFailedEvent();
 
