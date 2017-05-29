@@ -58,7 +58,7 @@ public class SQSFailedEventSource implements FailedEventSource<SQSFailedEvent> {
     }
 
     @Override
-    public long getApproximatelyTotalNumberOfFailedEvents() {
+    public long getSize() {
 
         final GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest(queueUrl,
                 Collections.singletonList(QueueAttributeName.ApproximateNumberOfMessages.name()));

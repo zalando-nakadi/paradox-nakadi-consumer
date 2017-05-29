@@ -1,6 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.boot;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -19,7 +20,6 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 
 import java.util.Collections;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 
 import org.hamcrest.Matchers;
@@ -59,21 +59,20 @@ public class FailedEventReplayControllerTest {
     }
 
     @Test
-    public void testShouldReturnApproximatelyTotalNumberOfFailedEvents() throws Exception {
+    public void testShouldReturnSizeOfFailedEvents() throws Exception {
         final String failedEventSourceName = randomAlphabetic(10);
-        final int approximatelyTotalNumberOfFailedEvents = RandomUtils.nextInt(1, 10);
+        final int sizeOfFailedEvents = RandomUtils.nextInt(1, 10);
         when(failedEventReplayer.getApproximatelyTotalNumberOfFailedEvents(failedEventSourceName)).thenReturn((long)
-            approximatelyTotalNumberOfFailedEvents);
+            sizeOfFailedEvents);
 
         mockMvc.perform(get("/nakadi/failed-event-sources/" + failedEventSourceName)).andExpect(status().isOk())
-               .andExpect(jsonPath("$.approximatelyTotalNumberOfFailedEvents").value(
-                       approximatelyTotalNumberOfFailedEvents));
+               .andExpect(jsonPath("$.numberOfFailedEvents").value(sizeOfFailedEvents));
     }
 
     @Test
     public void testShouldReplayFailedEvents() throws Exception {
         final String failedEventSourceName = randomAlphabetic(10);
-        final String numberOfFailedEvents = RandomStringUtils.randomNumeric(2);
+        final String numberOfFailedEvents = randomNumeric(2);
 
         doThrow(IllegalStateException.class).when(failedEventReplayer).replay(anyString(), anyLong(), anyBoolean());
 

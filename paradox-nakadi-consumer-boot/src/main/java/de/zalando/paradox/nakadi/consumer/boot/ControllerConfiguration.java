@@ -24,10 +24,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 
-import de.zalando.paradox.nakadi.consumer.boot.components.ApproximatelyTotalNumberOfFailedEventsResponse;
 import de.zalando.paradox.nakadi.consumer.boot.components.EventReceiverRegistry;
 import de.zalando.paradox.nakadi.consumer.boot.components.EventTypeConsumer;
 import de.zalando.paradox.nakadi.consumer.boot.components.FailedEventSourceNameResponse;
+import de.zalando.paradox.nakadi.consumer.boot.components.NumberOfFailedEventsResponse;
 import de.zalando.paradox.nakadi.consumer.core.EventHandler;
 import de.zalando.paradox.nakadi.consumer.core.client.Client;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
@@ -57,10 +57,10 @@ public class ControllerConfiguration {
         }
 
         @RequestMapping(value = "/{event_source_name:.+}", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ApproximatelyTotalNumberOfFailedEventsResponse getApproximatelyTotalNumberOfFailedEvents(
+        public NumberOfFailedEventsResponse getApproximatelyTotalNumberOfFailedEvents(
                 @PathVariable("event_source_name") final String eventSourceName) {
-            return new ApproximatelyTotalNumberOfFailedEventsResponse(
-                    failedEventReplayer.getApproximatelyTotalNumberOfFailedEvents(eventSourceName));
+            return new NumberOfFailedEventsResponse(failedEventReplayer.getApproximatelyTotalNumberOfFailedEvents(
+                        eventSourceName));
         }
 
         @RequestMapping(

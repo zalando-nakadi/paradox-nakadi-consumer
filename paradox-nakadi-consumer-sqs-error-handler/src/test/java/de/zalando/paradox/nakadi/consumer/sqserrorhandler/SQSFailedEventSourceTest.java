@@ -110,10 +110,8 @@ public class SQSFailedEventSourceTest {
 
         when(amazonSQS.getQueueAttributes(any(GetQueueAttributesRequest.class))).thenReturn(getQueueAttributesResult);
 
-        assertThatThrownBy(() ->
-                                        sqsFailedEventSource.getApproximatelyTotalNumberOfFailedEvents()).isInstanceOf(
-                                    IllegalStateException.class).hasMessage(
-                                    "ApproximatelyTotalNumberOfFailedEvents could not retrieved from SQS.");
+        assertThatThrownBy(() -> sqsFailedEventSource.getSize()).isInstanceOf(IllegalStateException.class).hasMessage(
+            "ApproximatelyTotalNumberOfFailedEvents could not retrieved from SQS.");
     }
 
     @Test
@@ -132,8 +130,7 @@ public class SQSFailedEventSourceTest {
 
         when(amazonSQS.getQueueAttributes(any(GetQueueAttributesRequest.class))).thenReturn(getQueueAttributesResult);
 
-        assertThat(sqsFailedEventSource.getApproximatelyTotalNumberOfFailedEvents()).isEqualTo(Long.valueOf(
-                approximatelyTotalNumberOfFailedEvents));
+        assertThat(sqsFailedEventSource.getSize()).isEqualTo(Long.valueOf(approximatelyTotalNumberOfFailedEvents));
     }
 
     @Test
@@ -146,7 +143,7 @@ public class SQSFailedEventSourceTest {
         getQueueAttributesResult.setAttributes(new HashMap<>());
 
         when(amazonSQS.getQueueAttributes(any(GetQueueAttributesRequest.class))).thenReturn(getQueueAttributesResult);
-        assertThat(sqsFailedEventSource.getApproximatelyTotalNumberOfFailedEvents()).isEqualTo(Long.valueOf(0L));
+        assertThat(sqsFailedEventSource.getSize()).isEqualTo(Long.valueOf(0L));
     }
 
     @Test
@@ -157,7 +154,7 @@ public class SQSFailedEventSourceTest {
         final GetQueueAttributesResult getQueueAttributesResult = new GetQueueAttributesResult();
         getQueueAttributesResult.setSdkHttpMetadata(responseMetadata);
         when(amazonSQS.getQueueAttributes(any(GetQueueAttributesRequest.class))).thenReturn(getQueueAttributesResult);
-        assertThat(sqsFailedEventSource.getApproximatelyTotalNumberOfFailedEvents()).isEqualTo(Long.valueOf(0L));
+        assertThat(sqsFailedEventSource.getSize()).isEqualTo(Long.valueOf(0L));
     }
 
     @Test

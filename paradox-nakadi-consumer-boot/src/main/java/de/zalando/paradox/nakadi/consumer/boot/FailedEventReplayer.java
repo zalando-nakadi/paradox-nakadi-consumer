@@ -48,7 +48,7 @@ public class FailedEventReplayer {
             }
 
             @Override
-            public long getApproximatelyTotalNumberOfFailedEvents() {
+            public long getSize() {
                 throw new IllegalArgumentException(EVENT_SOURCE_NAME_IS_NOT_AVAILABLE_MESSAGE);
             }
         };
@@ -63,8 +63,7 @@ public class FailedEventReplayer {
 
     public Long getApproximatelyTotalNumberOfFailedEvents(final String eventSourceName) {
         return failedEventSourceMap.getFailedEventSourceMap()
-                                   .getOrDefault(eventSourceName, NON_EXIST_FAILED_EVENT_SOURCE)
-                                   .getApproximatelyTotalNumberOfFailedEvents();
+                                   .getOrDefault(eventSourceName, NON_EXIST_FAILED_EVENT_SOURCE).getSize();
     }
 
     public Collection<String> getFailedEventSources() {
@@ -76,8 +75,7 @@ public class FailedEventReplayer {
         final FailedEventSource<FailedEvent> failedEventSource = failedEventSourceMap.getFailedEventSourceMap()
                                                                                      .getOrDefault(eventSourceName,
                                                                                          NON_EXIST_FAILED_EVENT_SOURCE);
-        final long approximatelyTotalNumberOfFailedEvents =
-            failedEventSource.getApproximatelyTotalNumberOfFailedEvents();
+        final long approximatelyTotalNumberOfFailedEvents = failedEventSource.getSize();
 
         final long upperBound = numberOfFailedEvents > approximatelyTotalNumberOfFailedEvents
             ? approximatelyTotalNumberOfFailedEvents : numberOfFailedEvents;
