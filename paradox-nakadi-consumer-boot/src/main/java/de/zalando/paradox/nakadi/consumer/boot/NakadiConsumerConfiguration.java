@@ -10,8 +10,10 @@ import static com.google.common.base.Preconditions.checkState;
 import java.lang.reflect.Method;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,10 +46,10 @@ import com.google.common.collect.SetMultimap;
 import de.zalando.paradox.nakadi.consumer.boot.components.ConsumerEventConfig;
 import de.zalando.paradox.nakadi.consumer.boot.components.ConsumerEventConfigList;
 import de.zalando.paradox.nakadi.consumer.boot.components.ConsumerPartitionCoordinatorProvider;
-import de.zalando.paradox.nakadi.consumer.boot.components.EventErrorHandlerList;
 import de.zalando.paradox.nakadi.consumer.core.AuthorizationValueProvider;
 import de.zalando.paradox.nakadi.consumer.core.EventHandler;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
+import de.zalando.paradox.nakadi.consumer.core.http.handlers.EventErrorHandler;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.impl.SimplePartitionCoordinator;
 import de.zalando.paradox.nakadi.consumer.partitioned.zk.ZKHolder;
 import de.zalando.paradox.nakadi.consumer.partitioned.zk.ZKLeaderConsumerPartitionCoordinator;
@@ -143,11 +145,11 @@ public class NakadiConsumerConfiguration {
         havingValue = "simple"
     )
     public ConsumerPartitionCoordinatorProvider simplePartitionCoordinatorProvider(
-            final EventErrorHandlerList eventErrorHandlerList) {
+            final Optional<List<EventErrorHandler>> eventErrorHandlerList) {
         return
             consumerName -> {
-            final SimplePartitionCoordinator coordinator = new SimplePartitionCoordinator(
-                    eventErrorHandlerList.getEventErrorHandlerList());
+            final SimplePartitionCoordinator coordinator = new SimplePartitionCoordinator(eventErrorHandlerList.orElse(
+                        Collections.emptyList()));
 
             // use false only for development as messages will be replayed on each restart
             coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.getDefaults()
@@ -162,11 +164,11 @@ public class NakadiConsumerConfiguration {
         value = "partitionCoordinatorProvider", prefix = DEFAULT_PROPERTIES_PREFIX, havingValue = "zk"
     )
     public ConsumerPartitionCoordinatorProvider leaderConsumerPartitionCoordinator(final ZKHolder zkHolder,
-            final EventErrorHandlerList eventErrorHandlerList) {
+            final Optional<List<EventErrorHandler>> eventErrorHandlerList) {
         return
             consumerName -> {
             final ZKLeaderConsumerPartitionCoordinator coordinator = new ZKLeaderConsumerPartitionCoordinator(zkHolder,
-                    consumerName, eventErrorHandlerList.getEventErrorHandlerList());
+                    consumerName, eventErrorHandlerList.orElse(Collections.emptyList()));
 
             coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.getDefaults()
                     .isStartNewestAvailableOffset());
@@ -192,11 +194,11 @@ public class NakadiConsumerConfiguration {
         value = "partitionCoordinatorProvider", prefix = DEFAULT_PROPERTIES_PREFIX, havingValue = "zk-simple"
     )
     public ConsumerPartitionCoordinatorProvider simpleConsumerPartitionCoordinator(final ZKHolder zkHolder,
-            final EventErrorHandlerList eventErrorHandlerList) {
+            final Optional<List<EventErrorHandler>> eventErrorHandlerList) {
         return
             consumerName -> {
             final ZKSimpleConsumerPartitionCoordinator coordinator = new ZKSimpleConsumerPartitionCoordinator(zkHolder,
-                    consumerName, eventErrorHandlerList.getEventErrorHandlerList());
+                    consumerName, eventErrorHandlerList.orElse(Collections.emptyList()));
 
             coordinator.setStartNewestAvailableOffset(nakadiConsumerProperties.getDefaults()
                     .isStartNewestAvailableOffset());
