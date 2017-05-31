@@ -25,6 +25,7 @@ buildscript {
         stupsTokensVersion = '0.9.11'
         stupsSpringOauth2ClientVersion = '1.0.9'
         propdepsPluginVersion = '0.0.9.RELEASE'
+        jaywayVersion = '2.2.0'
 
     }
     repositories {
@@ -89,6 +90,7 @@ subprojects {
             testCompile("org.mockito:mockito-all:${mockitoVersion}")
             testCompile("org.assertj:assertj-core:${assertjVersion}")
             testCompile("org.slf4j:slf4j-log4j12:${slf4jVersion}")
+            testCompile("com.jayway.jsonpath:json-path:${jaywayVersion}")
         }
 
         test {

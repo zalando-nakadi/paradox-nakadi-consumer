@@ -2,6 +2,8 @@ package de.zalando.paradox.nakadi.consumer.core.domain;
 
 public class FailedEvent {
 
+    private String id;
+
     private String consumerName;
 
     private String offset;
@@ -15,6 +17,19 @@ public class FailedEvent {
     private String rawEvent;
 
     private long failedTimeInMilliSeconds;
+
+    public FailedEvent() { }
+
+    public FailedEvent(final FailedEvent failedEvent) {
+        this.id = failedEvent.getId();
+        this.consumerName = failedEvent.getConsumerName();
+        this.offset = failedEvent.getOffset();
+        this.eventType = failedEvent.getEventType();
+        this.partition = failedEvent.getPartition();
+        this.throwable = failedEvent.getThrowable();
+        this.rawEvent = failedEvent.getRawEvent();
+        this.failedTimeInMilliSeconds = failedEvent.getFailedTimeInMilliSeconds();
+    }
 
     public String getConsumerName() {
         return consumerName;
@@ -70,5 +85,13 @@ public class FailedEvent {
 
     public void setFailedTimeInMilliSeconds(final long failedTimeInMilliSeconds) {
         this.failedTimeInMilliSeconds = failedTimeInMilliSeconds;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(final String id) {
+        this.id = id;
     }
 }

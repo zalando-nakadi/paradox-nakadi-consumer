@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSConfig;
 import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSErrorHandler;
+import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSFailedEventSource;
 import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSQueueHelper;
 
 @ConditionalOnProperty(value = "enabled", prefix = SQSConfiguration.DEFAULT_SQS_PROPERTIES_PREFIX, havingValue = "true")
@@ -53,5 +54,11 @@ public class ErrorHandlerConfiguration {
     @Bean
     public SQSQueueHelper sqsQueueHelper(final SQSConfig sqsConfig, final AmazonSQS amazonSQS) {
         return new SQSQueueHelper(sqsConfig, amazonSQS);
+    }
+
+    @Bean
+    public SQSFailedEventSource sqsFailedEventSource(final SQSConfig sqsConfig, final AmazonSQS amazonSQS,
+            @Qualifier("sqsErrorHandlerObjectMapper") final ObjectMapper objectMapper) {
+        return new SQSFailedEventSource(sqsConfig, amazonSQS, objectMapper);
     }
 }

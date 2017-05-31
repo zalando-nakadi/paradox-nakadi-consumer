@@ -29,6 +29,8 @@ import org.springframework.web.context.request.async.DeferredResult;
 
 import de.zalando.paradox.nakadi.consumer.boot.components.EventReceiverRegistry;
 import de.zalando.paradox.nakadi.consumer.boot.components.EventTypeConsumer;
+import de.zalando.paradox.nakadi.consumer.boot.components.FailedEventSourceNameResponse;
+import de.zalando.paradox.nakadi.consumer.boot.components.NumberOfFailedEventsResponse;
 import de.zalando.paradox.nakadi.consumer.core.EventHandler;
 import de.zalando.paradox.nakadi.consumer.core.client.Client;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
@@ -39,6 +41,44 @@ import rx.Single;
 
 @Configuration
 public class ControllerConfiguration {
+
+    @RestController
+    @RequestMapping(value = "/nakadi/failed-event-sources")
+    public static class FailedEventReplayController {
+
+        private final FailedEventReplayer failedEventReplayer;
+
+        @Autowired
+        public FailedEventReplayController(final FailedEventReplayer failedEventReplayer) {
+            this.failedEventReplayer = failedEventReplayer;
+        }
+
+        @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+        public FailedEventSourceNameResponse getFailedEventSources() {
+            return new FailedEventSourceNameResponse(failedEventReplayer.getFailedEventSources());
+        }
+
+        @RequestMapping(value = "/{event_source_name:.+}", produces = MediaType.APPLICATION_JSON_VALUE)
+        public NumberOfFailedEventsResponse getTotalNumberOfFailedEvents(
+                @PathVariable("event_source_name") final String eventSourceName) {
+            return new NumberOfFailedEventsResponse(failedEventReplayer.getTotalNumberOfFailedEvents(eventSourceName));
+        }
+
+        @RequestMapping(
+            value = "/{event_source_name:.+}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE
+        )
+        public ResponseEntity<?> replay(@PathVariable("event_source_name") final String eventSourceName,
+                @RequestParam("number_of_failed_events") final long numberOfFailedEvents,
+                @RequestParam(value = "break_processing_on_exception", defaultValue = "false") final boolean breakProcessingOnException) {
+
+            try {
+                failedEventReplayer.replay(eventSourceName, numberOfFailedEvents, breakProcessingOnException);
+                return ResponseEntity.ok().build();
+            } catch (Exception ex) {
+                return ResponseEntity.badRequest().body(ex);
+            }
+        }
+    }
 
     @RestController
     @RequestMapping(value = "/nakadi/event-receivers")
@@ -90,7 +130,7 @@ public class ControllerConfiguration {
         public DeferredResult<ResponseEntity<?>> replay(@PathVariable(value = "event_type") final String eventName,
                 @PathVariable(value = "partition") final String partition,
                 @PathVariable(value = "offset") final String offset,
-                @RequestParam(value = "consumer_name") final String consumerName,
+                @RequestParam(value = "consumer_name", required = false) final String consumerName,
                 @RequestParam(value = "verbose", required = false, defaultValue = "false") final boolean verbose) {
 
             if (validateConsumerNameAndEventType(consumerName, eventName)) {
@@ -110,7 +150,7 @@ public class ControllerConfiguration {
         )
         public DeferredResult<ResponseEntity<?>> restore(@PathVariable(value = "event_type") final String eventName,
                 @PathVariable(value = "partition") final String partition,
-                @RequestParam(value = "consumer_name") final String consumerName,
+                @RequestParam(value = "consumer_name", required = false) final String consumerName,
                 @RequestParam(value = "verbose", required = false, defaultValue = "false") final boolean verbose,
                 @RequestBody final String content) {
 
@@ -128,7 +168,7 @@ public class ControllerConfiguration {
 
             final DeferredResult<ResponseEntity<?>> deferredResult = new DeferredResult<>(DEFERRED_TIMEOUT);
             final Set<EventTypeConsumer> consumers = registry.getEventTypeConsumers().stream()
-                                                             .filter(filerConsumer(eventTypePartition.getName(),
+                                                             .filter(filterConsumer(eventTypePartition.getName(),
                         consumerName)).collect(Collectors.toSet());
             if (consumers.isEmpty()) {
                 deferredResult.setErrorResult(ResponseEntity.notFound().build());
@@ -148,7 +188,7 @@ public class ControllerConfiguration {
             return deferredResult;
         }
 
-        private Predicate<EventTypeConsumer> filerConsumer(@Nonnull final String eventName,
+        private Predicate<EventTypeConsumer> filterConsumer(@Nonnull final String eventName,
                 @Nullable final String consumerName) {
             return
                 elem ->
@@ -163,11 +203,7 @@ public class ControllerConfiguration {
         }
 
         private boolean validateConsumerNameAndEventType(final String consumerName, final String eventType) {
-            final Predicate<EventTypeConsumer> eventTypeConsumerPredicate = (eventTypeConsumer) ->
-                    eventTypeConsumer.getConsumerName().equals(consumerName)
-                        && eventTypeConsumer.getEventName().equals(eventType);
-
-            return registry.getEventTypeConsumers().stream().noneMatch(eventTypeConsumerPredicate);
+            return registry.getEventTypeConsumers().stream().noneMatch(filterConsumer(eventType, consumerName));
         }
     }
 }

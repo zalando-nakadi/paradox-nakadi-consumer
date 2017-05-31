@@ -6,6 +6,8 @@ import com.google.common.base.Objects;
 public class EventType {
     private String name;
 
+    public EventType() { }
+
     public EventType(final String name) {
         this.name = name;
     }
