@@ -1,8 +1,8 @@
 package de.zalando.paradox.nakadi.consumer.core.http.handlers;
 
-import static java.util.Objects.requireNonNull;
-
 import java.util.List;
+
+import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -29,19 +29,30 @@ abstract class AbstractEventsResponseBulkHandler<T> extends AbstractResponseHand
     public void onResponse(final String content) {
         final String[] events = getEvents(content);
         for (final String event : events) {
-            final NakadiEventBatch<T> nakadiEventBatch = requireNonNull(getEventBatch(event),
-                    "nakadiEventBatch must not be null");
+            final NakadiEventBatch<T> nakadiEventBatch = getEventBatchSafe(event);
+            if (nakadiEventBatch != null) {
+                final EventTypeCursor cursor = EventTypeCursor.of(eventTypePartition,
+                        nakadiEventBatch.getCursor().getOffset());
 
-            final EventTypeCursor cursor = EventTypeCursor.of(eventTypePartition,
-                    nakadiEventBatch.getCursor().getOffset());
+                final List<T> batchEvents = nakadiEventBatch.getEvents();
 
-            final List<T> batchEvents = nakadiEventBatch.getEvents();
-
-            if (batchEvents == null || batchEvents.isEmpty()) {
-                log.info("Keep alive offset [{}]", cursor.getOffset());
-            } else {
-                handleEvents(cursor, batchEvents, content);
+                if (batchEvents == null || batchEvents.isEmpty()) {
+                    log.info("Keep alive offset [{}]", cursor.getOffset());
+                } else {
+                    handleEvents(cursor, batchEvents, content);
+                }
             }
+        }
+    }
+
+    @Nullable
+    private NakadiEventBatch<T> getEventBatchSafe(final String event) {
+        try {
+            return getEventBatch(event);
+        } catch (final Throwable t) {
+            log.error("Handler error while handling event [{}]", event, t);
+            coordinator.error(consumerName, t, eventTypePartition, null, event);
+            return null;
         }
     }
 
@@ -49,7 +60,7 @@ abstract class AbstractEventsResponseBulkHandler<T> extends AbstractResponseHand
         try {
             delegate.onEvent(cursor, events);
         } catch (final Throwable t) {
-            log.error("Handler error at cursor [{}]", cursor);
+            log.error("Handler error at cursor [{}]", cursor, t);
             coordinator.error(consumerName, t, eventTypePartition, cursor.getOffset(), content);
         }
 
