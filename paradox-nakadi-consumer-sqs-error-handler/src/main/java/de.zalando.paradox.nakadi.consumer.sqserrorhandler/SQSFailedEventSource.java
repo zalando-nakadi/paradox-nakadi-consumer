@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.Optional;
 
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.DeleteMessageResult;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 import com.amazonaws.services.sqs.model.GetQueueUrlResult;
@@ -50,13 +49,7 @@ public class SQSFailedEventSource implements FailedEventSource<SQSFailedEvent> {
 
     @Override
     public void commit(final SQSFailedEvent sqsFailedEvent) {
-
-        final DeleteMessageResult deleteMessageResult = amazonSQS.deleteMessage(queueUrl,
-                sqsFailedEvent.getReceiptHandle());
-
-        if (deleteMessageResult.getSdkHttpMetadata().getHttpStatusCode() != 200) {
-            throw new IllegalStateException("The event could not removed from the queue.");
-        }
+        amazonSQS.deleteMessage(queueUrl, sqsFailedEvent.getReceiptHandle());
     }
 
     @Override
@@ -66,10 +59,6 @@ public class SQSFailedEventSource implements FailedEventSource<SQSFailedEvent> {
                 Collections.singletonList(QueueAttributeName.ApproximateNumberOfMessages.name()));
 
         final GetQueueAttributesResult queueAttributes = amazonSQS.getQueueAttributes(getQueueAttributesRequest);
-
-        if (queueAttributes.getSdkHttpMetadata().getHttpStatusCode() != 200) {
-            throw new IllegalStateException("ApproximatelyTotalNumberOfFailedEvents could not retrieved from SQS.");
-        }
 
         if (queueAttributes.getAttributes() != null) {
             return Long.valueOf(queueAttributes.getAttributes().getOrDefault(

@@ -10,6 +10,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -81,9 +82,7 @@ public class SQSFailedEventSourceTest {
     @Test
     public void testShouldFailWhenQueueUrlIsNotRetrieved() {
 
-        amazonSQS = mock(AmazonSQS.class);
-        sqsConfig = mock(SQSConfig.class);
-        objectMapper = mock(ObjectMapper.class);
+        reset(amazonSQS, sqsConfig);
 
         final String queueName = randomAlphabetic(10);
         when(sqsConfig.getQueueName()).thenReturn(queueName);
@@ -98,21 +97,6 @@ public class SQSFailedEventSourceTest {
         assertThatThrownBy(() -> new SQSFailedEventSource(sqsConfig, amazonSQS, objectMapper)).isInstanceOf(
             NullPointerException.class).hasMessageContaining("The queue url was not retrieved. Queue name =");
         verify(amazonSQS).getQueueUrl(anyString());
-    }
-
-    @Test
-    public void testShouldFailWhileGettingTotalNumberOfFailedEvents() {
-
-        final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
-        when(responseMetadata.getHttpStatusCode()).thenReturn(400);
-
-        final GetQueueAttributesResult getQueueAttributesResult = new GetQueueAttributesResult();
-        getQueueAttributesResult.setSdkHttpMetadata(responseMetadata);
-
-        when(amazonSQS.getQueueAttributes(any(GetQueueAttributesRequest.class))).thenReturn(getQueueAttributesResult);
-
-        assertThatThrownBy(() -> sqsFailedEventSource.getSize()).isInstanceOf(IllegalStateException.class).hasMessage(
-            "ApproximatelyTotalNumberOfFailedEvents could not retrieved from SQS.");
     }
 
     @Test
@@ -156,21 +140,6 @@ public class SQSFailedEventSourceTest {
         getQueueAttributesResult.setSdkHttpMetadata(responseMetadata);
         when(amazonSQS.getQueueAttributes(any(GetQueueAttributesRequest.class))).thenReturn(getQueueAttributesResult);
         assertThat(sqsFailedEventSource.getSize()).isEqualTo(Long.valueOf(0L));
-    }
-
-    @Test
-    public void testShouldNotCommitTheMessageSuccessfully() {
-
-        final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
-        when(responseMetadata.getHttpStatusCode()).thenReturn(400);
-
-        final DeleteMessageResult deleteMessageResult = new DeleteMessageResult();
-        deleteMessageResult.setSdkHttpMetadata(responseMetadata);
-
-        when(amazonSQS.deleteMessage(anyString(), anyString())).thenReturn(deleteMessageResult);
-
-        assertThatThrownBy(() -> sqsFailedEventSource.commit(new SQSFailedEvent(new FailedEvent()))).isInstanceOf(
-            IllegalStateException.class).hasMessage("The event could not removed from the queue.");
     }
 
     @Test

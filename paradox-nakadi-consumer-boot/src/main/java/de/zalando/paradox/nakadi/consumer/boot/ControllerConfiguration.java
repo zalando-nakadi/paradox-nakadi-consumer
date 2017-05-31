@@ -5,9 +5,12 @@ import static java.util.Objects.requireNonNull;
 import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.ok;
 
-import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -33,7 +36,6 @@ import de.zalando.paradox.nakadi.consumer.core.client.Client;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
-import de.zalando.paradox.nakadi.consumer.core.domain.FailedEvent;
 
 import rx.Single;
 
@@ -75,32 +77,6 @@ public class ControllerConfiguration {
             } catch (Exception ex) {
                 return ResponseEntity.badRequest().body(ex);
             }
-        }
-
-        public DeferredResult<ResponseEntity<?>> replay(final String eventSourceName, final String eventId) {
-            throw new UnsupportedOperationException();
-        }
-
-        public DeferredResult<ResponseEntity<?>> replay(final String eventSourceName, final String eventType,
-                final String eventId) {
-            throw new UnsupportedOperationException();
-        }
-
-        public DeferredResult<ResponseEntity<?>> replay(final String eventSourceName, final FailedEvent failedEvent) {
-            throw new UnsupportedOperationException();
-        }
-
-        public DeferredResult<ResponseEntity<?>> replay(final String eventSourceName,
-                final List<FailedEvent> failedEvent) {
-            throw new UnsupportedOperationException();
-        }
-
-        public DeferredResult<ResponseEntity<?>> discard(final String eventSourceName, final FailedEvent failedEvent) {
-            throw new UnsupportedOperationException();
-        }
-
-        public DeferredResult<ResponseEntity<?>> discard(final String eventSourceName, final String eventId) {
-            throw new UnsupportedOperationException();
         }
     }
 
@@ -192,9 +168,8 @@ public class ControllerConfiguration {
 
             final DeferredResult<ResponseEntity<?>> deferredResult = new DeferredResult<>(DEFERRED_TIMEOUT);
             final Set<EventTypeConsumer> consumers = registry.getEventTypeConsumers().stream()
-                                                             .filter(replayHandler.filterConsumer(
-                                                                     eventTypePartition.getName(), consumerName))
-                                                             .collect(Collectors.toSet());
+                                                             .filter(filterConsumer(eventTypePartition.getName(),
+                        consumerName)).collect(Collectors.toSet());
             if (consumers.isEmpty()) {
                 deferredResult.setErrorResult(ResponseEntity.notFound().build());
             } else {
@@ -213,6 +188,14 @@ public class ControllerConfiguration {
             return deferredResult;
         }
 
+        private Predicate<EventTypeConsumer> filterConsumer(@Nonnull final String eventName,
+                @Nullable final String consumerName) {
+            return
+                elem ->
+                    elem.getEventName().equals(eventName)
+                        && (null == consumerName || elem.getConsumerName().equals(consumerName));
+        }
+
         private DeferredResult<ResponseEntity<?>> getBadDeferredResult() {
             final DeferredResult<ResponseEntity<?>> deferredResult = new DeferredResult<>();
             deferredResult.setErrorResult(badRequest().body("Consumer not found."));
@@ -220,8 +203,7 @@ public class ControllerConfiguration {
         }
 
         private boolean validateConsumerNameAndEventType(final String consumerName, final String eventType) {
-            return registry.getEventTypeConsumers().stream().noneMatch(replayHandler.filterConsumer(eventType,
-                        consumerName));
+            return registry.getEventTypeConsumers().stream().noneMatch(filterConsumer(eventType, consumerName));
         }
     }
 }
