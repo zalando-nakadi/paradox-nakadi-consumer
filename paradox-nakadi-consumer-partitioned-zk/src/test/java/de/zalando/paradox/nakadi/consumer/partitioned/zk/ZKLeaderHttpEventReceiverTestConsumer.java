@@ -30,7 +30,7 @@ public class ZKLeaderHttpEventReceiverTestConsumer {
         coordinator.init();
 
         try {
-            final ConsumerConfig config = getBatchEventsConfig(baseUri, eventName, coordinator);
+            final ConsumerConfig config = getBatchEventsConfig(baseUri, eventName, coordinator, consumerName);
             final HttpReactiveReceiver receiver = new HttpReactiveReceiver(new HttpGetPartitionsHandler(config));
             receiver.init();
             LOGGER.info("Receiver started .....");
@@ -48,28 +48,30 @@ public class ZKLeaderHttpEventReceiverTestConsumer {
 
     @SuppressWarnings("unused")
     private static ConsumerConfig getRawEventConfig(final String baseUri, final String eventName,
-            final PartitionCoordinator coordinator) {
+            final PartitionCoordinator coordinator, final String consumerName) {
         final RawEventHandler handler = (cursor, content) -> {
             LOGGER.info("### cursor  {}", cursor);
             LOGGER.info("### raw event  {}", content);
         };
 
-        return new ConsumerConfig.Builder(baseUri, eventName, coordinator).withRawEventHandler(handler).build();
+        return new ConsumerConfig.Builder(baseUri, eventName, coordinator, consumerName).withRawEventHandler(handler)
+                                                                                        .build();
     }
 
     @SuppressWarnings("unused")
     private static ConsumerConfig getRawContentConfig(final String baseUri, final String eventName,
-            final PartitionCoordinator coordinator) {
+            final PartitionCoordinator coordinator, final String consumerName) {
         final RawContentHandler handler = (cursor, content) -> {
             LOGGER.info("### cursor  {}", cursor);
             LOGGER.info("### raw content  {}", content);
         };
-        return new ConsumerConfig.Builder(baseUri, eventName, coordinator).withRawContentHandler(handler).build();
+        return new ConsumerConfig.Builder(baseUri, eventName, coordinator, consumerName).withRawContentHandler(handler)
+                                                                                        .build();
     }
 
     @SuppressWarnings("unused")
     private static ConsumerConfig getBatchEventsConfig(final String baseUri, final String eventName,
-            final PartitionCoordinator coordinator) {
+            final PartitionCoordinator coordinator, final String consumerName) {
 
         final BatchEventsHandler<Object> handler = new BatchEventsHandler<Object>() {
             @Override
@@ -84,6 +86,7 @@ public class ZKLeaderHttpEventReceiverTestConsumer {
             }
         };
 
-        return ConsumerConfig.Builder.of(baseUri, eventName, coordinator).withBatchEventsHandler(handler).build();
+        return ConsumerConfig.Builder.of(baseUri, eventName, coordinator, consumerName).withBatchEventsHandler(handler)
+                                     .build();
     }
 }

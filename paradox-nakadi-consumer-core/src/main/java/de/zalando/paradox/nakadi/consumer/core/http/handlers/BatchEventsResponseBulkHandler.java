@@ -13,9 +13,11 @@ import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 public class BatchEventsResponseBulkHandler<T> extends AbstractEventsResponseBulkHandler<T> {
     private final JavaType javaType;
 
-    public BatchEventsResponseBulkHandler(final EventTypePartition eventTypePartition, final ObjectMapper jsonMapper,
-            final PartitionCoordinator coordinator, final BatchEventsBulkHandler<T> delegate) {
-        super(eventTypePartition, coordinator, BatchEventsResponseBulkHandler.class, jsonMapper, delegate);
+    public BatchEventsResponseBulkHandler(final String consumerName, final EventTypePartition eventTypePartition,
+            final ObjectMapper jsonMapper, final PartitionCoordinator coordinator,
+            final BatchEventsBulkHandler<T> delegate) {
+        super(consumerName, eventTypePartition, coordinator, BatchEventsResponseBulkHandler.class, jsonMapper,
+            delegate);
         this.javaType = EventClassProvider.getJavaType(delegate, jsonMapper);
     }
 

@@ -17,6 +17,7 @@ Java high level [Nakadi](https://github.com/zalando/nakadi) consumer.
 * [x] Automatic rebalance after new partition was added to Nakadi topic
 * [x] OAuth2
 * [x] Separate generic spring boot client
+* [x] Handle failed events with SQS queue
 
 
 
@@ -24,10 +25,11 @@ Java high level [Nakadi](https://github.com/zalando/nakadi) consumer.
 
 
     .
-    ├── paradox-nakadi-consumer-core                   # Core implementation
-    ├── paradox-nakadi-consumer-partitioned-zk         # Offset management with Zookeeper / Exhibitor
-    ├── paradox-nakadi-consumer-boot                   # Spring Boot bindings
-    ├── paradox-nakadi-consumer-example-boot           # Spring Boot usage example
+    ├── paradox-nakadi-consumer-core                        # Core implementation
+    ├── paradox-nakadi-consumer-partitioned-zk              # Offset management with Zookeeper / Exhibitor
+    ├── paradox-nakadi-consumer-boot                        # Spring Boot bindings
+    ├── paradox-nakadi-consumer-example-boot                # Spring Boot usage example
+    ├── paradox-nakadi-consumer-sqs-error-handler           # Failed event handling with Amazon SQS
     └── README.md
 
 
@@ -40,12 +42,22 @@ Java high level [Nakadi](https://github.com/zalando/nakadi) consumer.
 
 ## Usage
 
-### Maven dependency
+### Maven dependencies
 
 ```xml
 <dependency>
     <groupId>org.zalando.paradox</groupId>
     <artifactId>paradox-nakadi-consumer-boot</artifactId>
+    <version>see above</version>
+</dependency>
+```
+
+For error handling
+
+```xml
+<dependency>
+    <groupId>org.zalando.paradox</groupId>
+    <artifactId>paradox-nakadi-consumer-sqs-error-handler</artifactId>
     <version>see above</version>
 </dependency>
 ```
@@ -65,6 +77,14 @@ Offset tracking and topic partition leader election is done pro consumer group n
 ```yaml
 paradox:
   nakadi:
+    errorhandler:
+      sqs:
+        enabled: true
+        queueName: test-queue-name
+        region: eu-central-1
+        createQueueIfNotExists: true
+        messageVisibilityTimeout: 120
+        messageRetentionPeriod: 1209600
     defaults:
       nakadiUrl: https://nakadi.example.com
       nakadiTokenId: nakadi-event-stream-read
@@ -404,12 +424,13 @@ public interface EventErrorHandler {
      * This callback method will be called when an exception occurred. The Exception can be many things such as a broken
      * event, unparsable event body, database connection timeout etc.
      *
+     * @param  consumerName        Event consumer name
      * @param  t                   Thrown exception itself
      * @param  eventTypePartition  EventTypePartition contains eventType and partition information
      * @param  offset              Current offset
      * @param  rawEvent            Raw event body itself
      */
-    void onError(Throwable t, EventTypePartition eventTypePartition, @Nullable String offset, String rawEvent);
+    void onError(String consumerName, Throwable t, EventTypePartition eventTypePartition, @Nullable String offset, String rawEvent);
 }
 ```
 
@@ -424,15 +445,31 @@ public class LoggingEventErrorHandler implements EventErrorHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingEventErrorHandler.class);
 
     @Override
-    public void onError(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String offset,
+    public void onError(final String consumerName, final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String offset,
             final String rawEvent) {
         LOGGER.error(
-            "Failed Event // Event Partition = [{}] , Event Type = [{}] , Event Offset = [{}] , Raw Event = [{}] //",
-            eventTypePartition.getPartition(), eventTypePartition.getEventType(), offset, rawEvent, t);
+            "Failed Event // Consumer Name = [{}] , Event Partition = [{}] , Event Type = [{}] , Event Offset = [{}] , Raw Event = [{}] //",
+            consumerName, eventTypePartition.getPartition(), eventTypePartition.getEventType(), offset, rawEvent, t);
     }
 }
 ```
 
+If the SQS error handler is enabled, it will store the failed events to the SQS queue automatically.
+
+Here are the configuration explanations 
+
+`paradox.nakadi.errorhandler.sqs.enabled`: If it is true, the handler is bound to context automatically.
+
+`paradox.nakadi.errorhandler.sqs.queueName`: The place where the failed events are stored.
+
+`paradox.nakadi.errorhandler.sqs.region`: See available AWS regions in [AWS Documentation](http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/regions/Regions.html)
+
+`paradox.nakadi.errorhandler.sqs.createQueueIfNotExists`: If the parameter is true, initially, it checks the queue name in amazon then creates it if it does not exist.
+
+`paradox.nakadi.errorhandler.sqs.messageVisibilityTimeout`: See VisibilityTimeout parameter in [AWS Documentation](http://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html)
+
+`paradox.nakadi.errorhandler.sqs.messageRetentionPeriod`: See MessageRetentionPeriod parameter in [AWS Documentation](http://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html)
+     
 ### Spring boot support endpoints
 
 #### Stop and restart event receivers

@@ -91,7 +91,7 @@ public class EventReceiverRegistry {
         checkArgument(null != handler, "handler must not be null");
 
         final PartitionCoordinator coordinator = getPartitionCoordinator(consumerName, eventName);
-        ConsumerConfig.Builder builder = ConsumerConfig.Builder.of(nakadiUrl, eventName, coordinator);
+        ConsumerConfig.Builder builder = ConsumerConfig.Builder.of(nakadiUrl, eventName, coordinator, consumerName);
         if (null != authorizationValueProvider) {
             builder = builder.withAuthorization(authorizationValueProvider);
         }

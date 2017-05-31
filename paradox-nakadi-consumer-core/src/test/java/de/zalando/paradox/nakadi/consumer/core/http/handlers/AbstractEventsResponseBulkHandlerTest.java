@@ -34,6 +34,8 @@ public class AbstractEventsResponseBulkHandlerTest {
     private static final EventTypePartition EVENT_TYPE_PARTITION = EventTypePartition.of(EventType.of("test-event"),
             "0");
 
+    private static final String TEST_CONSUMER_NAME = "test-consumer";
+
     @Mock
     private PartitionCoordinator mockPartitionCoordinator;
 
@@ -52,6 +54,9 @@ public class AbstractEventsResponseBulkHandlerTest {
     @Captor
     private ArgumentCaptor<String> eventCaptor;
 
+    @Captor
+    private ArgumentCaptor<String> consumerCaptor;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
@@ -60,8 +65,8 @@ public class AbstractEventsResponseBulkHandlerTest {
     @Test
     public void testShouldCallCoordinatorIfEventDeserializationFails() {
         final AbstractEventsResponseBulkHandler<String> handler = new AbstractEventsResponseBulkHandler<String>(
-                EVENT_TYPE_PARTITION, mockPartitionCoordinator, AbstractEventsResponseBulkHandler.class,
-                new ObjectMapper(), (cursor, events) -> { }) {
+                TEST_CONSUMER_NAME, EVENT_TYPE_PARTITION, mockPartitionCoordinator,
+                AbstractEventsResponseBulkHandler.class, new ObjectMapper(), (cursor, events) -> { }) {
             @Override
             NakadiEventBatch<String> getEventBatch(final String event) {
                 throw new RuntimeException("expected");
@@ -73,9 +78,10 @@ public class AbstractEventsResponseBulkHandlerTest {
                 + "\"metadata\": {\"eid\": \"4ae5011e-eb01-11e5-8b4a-1c6f65464fc6\", \"occurred_at\": \"2016-03-15T23:56:11+01:00\"}}]}";
         handler.onResponse(eventContent);
 
-        verify(mockPartitionCoordinator).error(throwableCaptor.capture(), eventTypePartitionCaptor.capture(),
-            offsetCaptor.capture(), eventCaptor.capture());
+        verify(mockPartitionCoordinator).error(consumerCaptor.capture(), throwableCaptor.capture(),
+            eventTypePartitionCaptor.capture(), offsetCaptor.capture(), eventCaptor.capture());
 
+        assertThat(consumerCaptor.getValue()).isEqualTo(TEST_CONSUMER_NAME);
         assertThat(throwableCaptor.getValue()).isInstanceOf(RuntimeException.class).hasMessage("expected");
         assertThat(eventTypePartitionCaptor.getValue()).isEqualTo(EVENT_TYPE_PARTITION);
         assertThat(offsetCaptor.getValue()).isNull();
@@ -88,8 +94,8 @@ public class AbstractEventsResponseBulkHandlerTest {
             anyListOf(String.class));
 
         final AbstractEventsResponseBulkHandler<String> handler = new AbstractEventsResponseBulkHandler<String>(
-                EVENT_TYPE_PARTITION, mockPartitionCoordinator, AbstractEventsResponseBulkHandler.class,
-                new ObjectMapper(), mockEventHandler) {
+                TEST_CONSUMER_NAME, EVENT_TYPE_PARTITION, mockPartitionCoordinator,
+                AbstractEventsResponseBulkHandler.class, new ObjectMapper(), mockEventHandler) {
             @Override
             NakadiEventBatch<String> getEventBatch(final String event) {
                 return new NakadiEventBatch<>(new NakadiCursor("0", "BEGIN"),
@@ -105,9 +111,10 @@ public class AbstractEventsResponseBulkHandlerTest {
                 + "\"metadata\": {\"eid\": \"4ae5011e-eb01-11e5-8b4a-1c6f65464fc6\", \"occurred_at\": \"2016-03-15T23:56:11+01:00\"}}]}";
         handler.onResponse(eventContent);
 
-        verify(mockPartitionCoordinator).error(throwableCaptor.capture(), eventTypePartitionCaptor.capture(),
-            offsetCaptor.capture(), eventCaptor.capture());
+        verify(mockPartitionCoordinator).error(consumerCaptor.capture(), throwableCaptor.capture(),
+            eventTypePartitionCaptor.capture(), offsetCaptor.capture(), eventCaptor.capture());
 
+        assertThat(consumerCaptor.getValue()).isEqualTo(TEST_CONSUMER_NAME);
         assertThat(throwableCaptor.getValue()).isInstanceOf(RuntimeException.class).hasMessage("expected");
         assertThat(eventTypePartitionCaptor.getValue()).isEqualTo(EVENT_TYPE_PARTITION);
         assertThat(offsetCaptor.getValue()).isEqualTo("BEGIN");

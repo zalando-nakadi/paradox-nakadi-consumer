@@ -35,6 +35,8 @@ import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionCoordinator;
 
 public class JsonEventResponseHandlerTest {
 
+    private static final String CONSUMER_NAME = "consumerName";
+
     @Mock
     private PartitionCoordinator coordinator;
 
@@ -54,7 +56,8 @@ public class JsonEventResponseHandlerTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        this.handler = new JsonEventResponseHandler(EVENT_TYPE_PARTITION, OBJECT_MAPPER, coordinator, delegate);
+        this.handler = new JsonEventResponseHandler(CONSUMER_NAME, EVENT_TYPE_PARTITION, OBJECT_MAPPER, coordinator,
+                delegate);
     }
 
     @Test

@@ -10,7 +10,8 @@ public interface PartitionOffsetManagement {
 
     void flush(final EventTypePartition eventTypePartition);
 
-    void error(Throwable t, EventTypePartition eventTypePartition, @Nullable String offset, String rawEvent);
+    void error(String consumerName, Throwable t, EventTypePartition eventTypePartition, @Nullable String offset,
+            String rawEvent);
 
     void error(final int statusCode, final String content, final EventTypePartition eventTypePartition);
 }

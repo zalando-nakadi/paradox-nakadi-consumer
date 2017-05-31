@@ -7,6 +7,14 @@ server:
 
 paradox:
   nakadi:
+    errorhandler:
+      sqs:
+        enabled: false
+        queueName: test-queue-name
+        region: eu-central-1
+        createQueueIfNotExists: true
+        messageVisibilityTimeout: 120
+        messageRetentionPeriod: 1209600
     defaults:
       nakadiUrl: http://localhost:8080
       partitionCoordinatorProvider: simple

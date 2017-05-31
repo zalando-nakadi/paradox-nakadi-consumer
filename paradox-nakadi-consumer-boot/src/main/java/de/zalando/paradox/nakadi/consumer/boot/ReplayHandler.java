@@ -33,8 +33,8 @@ class ReplayHandler {
 
     private static final PartitionCoordinator THROWING_COORDINATOR = new EmptyPartitionCoordinator() {
         @Override
-        public void error(final Throwable t, final EventTypePartition eventTypePartition, @Nullable final String cursor,
-                final String rawEvent) {
+        public void error(final String consumerName, final Throwable t, final EventTypePartition eventTypePartition,
+                @Nullable final String cursor, final String rawEvent) {
 
             ThrowableUtils.throwException(t);
         }
@@ -54,27 +54,28 @@ class ReplayHandler {
     }
 
     @SuppressWarnings("unchecked")
-    void handle(final EventHandler<?> handler, final EventTypePartition eventTypePartition, final String content) {
+    void handle(final String consumerName, final EventHandler<?> handler, final EventTypePartition eventTypePartition,
+            final String content) {
         if (handler instanceof RawContentHandler) {
-            new RawContentResponseHandler(eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
+            new RawContentResponseHandler(consumerName, eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
                 (RawContentHandler) handler).onResponse(content);
         } else if (handler instanceof BatchEventsHandler) {
-            new BatchEventsResponseHandler(eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
+            new BatchEventsResponseHandler(consumerName, eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
                 (BatchEventsHandler<?>) handler).onResponse(content);
         } else if (handler instanceof BatchEventsBulkHandler) {
-            new BatchEventsResponseBulkHandler(eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
+            new BatchEventsResponseBulkHandler(consumerName, eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
                 (BatchEventsBulkHandler<?>) handler).onResponse(content);
         } else if (handler instanceof RawEventHandler) {
-            new RawEventResponseHandler(eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
+            new RawEventResponseHandler(consumerName, eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
                 (RawEventHandler) handler).onResponse(content);
         } else if (handler instanceof RawEventBulkHandler) {
-            new RawEventResponseBulkHandler(eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
+            new RawEventResponseBulkHandler(consumerName, eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
                 (RawEventBulkHandler) handler).onResponse(content);
         } else if (handler instanceof JsonEventHandler) {
-            new JsonEventResponseHandler(eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
+            new JsonEventResponseHandler(consumerName, eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
                 (JsonEventHandler) handler).onResponse(content);
         } else if (handler instanceof JsonEventBulkHandler) {
-            new JsonEventResponseBulkHandler(eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
+            new JsonEventResponseBulkHandler(consumerName, eventTypePartition, OBJECT_MAPPER, THROWING_COORDINATOR,
                 (JsonEventBulkHandler) handler).onResponse(content);
         } else {
             throw new IllegalStateException("Unknown handler type " + handler.getClass().getName());
