@@ -1,7 +1,6 @@
 package de.zalando.paradox.nakadi.consumer.sqserrorhandler;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -47,7 +46,6 @@ public class SQSQueueHelperTest {
 
     @Test
     public void testShouldNotCreateQueue() {
-
         sqsQueueHelper.init();
 
         verify(sqsConfig).isCreateQueueIfNotExists();
@@ -56,80 +54,80 @@ public class SQSQueueHelperTest {
 
     @Test
     public void testShouldNotAllowAlphabeticValueForMessageRetentionPeriod() {
-        when(sqsConfig.getMessageRetentionPeriod()).thenReturn(randomAlphabetic(10));
         when(sqsConfig.isCreateQueueIfNotExists()).thenReturn(true);
+        when(sqsConfig.getMessageRetentionPeriod()).thenReturn("invalid");
 
         assertThatThrownBy(() -> sqsQueueHelper.init()).isInstanceOf(IllegalArgumentException.class).hasMessage(
-            "messageRetentionPeriod parameter must be numeric.");
+            "messageRetentionPeriod parameter must be numeric, was [invalid]");
     }
 
     @Test
     public void testShouldNotAllowTheValueIsNotBetweenTheRangeForMessageRetentionPeriod() {
-        when(sqsConfig.getMessageRetentionPeriod()).thenReturn(randomNumeric(1));
         when(sqsConfig.isCreateQueueIfNotExists()).thenReturn(true);
+        when(sqsConfig.getMessageRetentionPeriod()).thenReturn("59");
 
         assertThatThrownBy(() -> sqsQueueHelper.init()).isInstanceOf(IllegalArgumentException.class).hasMessage(
-            "messageRetentionPeriod parameter must be between [60,1209600]");
+            "messageRetentionPeriod parameter must be between [60, 1209600], was [59]");
     }
 
     @Test
     public void testShouldNotAllowAlphabeticValueForMessageVisibilityTimeout() {
         when(sqsConfig.isCreateQueueIfNotExists()).thenReturn(true);
-        when(sqsConfig.getMessageRetentionPeriod()).thenReturn(randomNumeric(3));
-        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn(randomAlphabetic(10));
+        when(sqsConfig.getMessageRetentionPeriod()).thenReturn("60");
+        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn("invalid");
 
         assertThatThrownBy(() -> sqsQueueHelper.init()).isInstanceOf(IllegalArgumentException.class).hasMessage(
-            "messageVisibilityTimeout parameter must be numeric.");
+            "messageVisibilityTimeout parameter must be numeric, was [invalid]");
     }
 
     @Test
     public void testShouldNotAllowTheValueIsNotBetweenTheRangeForMessageVisibilityTimeout() {
-        when(sqsConfig.getMessageRetentionPeriod()).thenReturn(randomNumeric(3));
         when(sqsConfig.isCreateQueueIfNotExists()).thenReturn(true);
-        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn(randomNumeric(6));
+        when(sqsConfig.getMessageRetentionPeriod()).thenReturn("60");
+        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn("1000000");
 
         assertThatThrownBy(() -> sqsQueueHelper.init()).isInstanceOf(IllegalArgumentException.class).hasMessage(
-            "messageRetentionPeriod parameter must be between [0,43200]");
+            "messageRetentionPeriod parameter must be between [0, 43200], was [1000000]");
     }
 
     @Test
     public void testShouldNotAllowEmptyQueueName() {
-        when(sqsConfig.getMessageRetentionPeriod()).thenReturn(randomNumeric(3));
         when(sqsConfig.isCreateQueueIfNotExists()).thenReturn(true);
-        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn(randomNumeric(4));
+        when(sqsConfig.getMessageRetentionPeriod()).thenReturn("60");
+        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn("0");
 
         assertThatThrownBy(() -> sqsQueueHelper.init()).isInstanceOf(IllegalArgumentException.class).hasMessage(
-            "queueName parameter must not be empty.");
+            "queueName parameter must not be empty");
     }
 
     @Test
     public void testShouldNotAllowEmptyRegion() {
-        when(sqsConfig.getMessageRetentionPeriod()).thenReturn(randomNumeric(3));
         when(sqsConfig.isCreateQueueIfNotExists()).thenReturn(true);
-        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn(randomNumeric(4));
+        when(sqsConfig.getMessageRetentionPeriod()).thenReturn("60");
+        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn("0");
         when(sqsConfig.getQueueName()).thenReturn(randomAlphabetic(10));
 
         assertThatThrownBy(() -> sqsQueueHelper.init()).isInstanceOf(IllegalArgumentException.class).hasMessage(
-            "region parameter must not be empty.");
+            "region parameter must not be empty");
     }
 
     @Test
     public void testShouldNotAllowInvalidRegion() {
-        when(sqsConfig.getMessageRetentionPeriod()).thenReturn(randomNumeric(3));
         when(sqsConfig.isCreateQueueIfNotExists()).thenReturn(true);
-        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn(randomNumeric(4));
+        when(sqsConfig.getMessageRetentionPeriod()).thenReturn("60");
+        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn("0");
         when(sqsConfig.getQueueName()).thenReturn(randomAlphabetic(10));
-        when(sqsConfig.getRegion()).thenReturn(randomAlphabetic(18));
+        when(sqsConfig.getRegion()).thenReturn("invalid-aws-region");
 
         assertThatThrownBy(() -> sqsQueueHelper.init()).isInstanceOf(IllegalArgumentException.class).hasMessage(
-            "region parameter must be valid.");
+            "[invalid-aws-region] is not a valid region");
     }
 
     @Test
     public void testShouldNotCreateANewQueueIfExists() {
-        when(sqsConfig.getMessageRetentionPeriod()).thenReturn(randomNumeric(5));
         when(sqsConfig.isCreateQueueIfNotExists()).thenReturn(true);
-        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn(randomNumeric(4));
+        when(sqsConfig.getMessageRetentionPeriod()).thenReturn("60");
+        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn("0");
         when(sqsConfig.getQueueName()).thenReturn(randomAlphabetic(10));
         when(sqsConfig.getRegion()).thenReturn(Regions.EU_CENTRAL_1.getName());
 
@@ -140,14 +138,14 @@ public class SQSQueueHelperTest {
 
     @Test
     public void testShouldFailIfQueueCreationAttemptsFails() {
-        when(sqsConfig.getMessageRetentionPeriod()).thenReturn(randomNumeric(3));
         when(sqsConfig.isCreateQueueIfNotExists()).thenReturn(true);
-        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn(randomNumeric(4));
+        when(sqsConfig.getMessageRetentionPeriod()).thenReturn("60");
+        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn("0");
 
         final String queueName = randomAlphabetic(10);
         when(sqsConfig.getQueueName()).thenReturn(queueName);
         when(sqsConfig.getRegion()).thenReturn(Regions.EU_CENTRAL_1.getName());
-        when(amazonSQS.getQueueUrl(anyString())).thenThrow(QueueDoesNotExistException.class);
+        when(amazonSQS.getQueueUrl(anyString())).thenThrow(new QueueDoesNotExistException("expected"));
 
         final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
         when(responseMetadata.getHttpStatusCode()).thenReturn(400);
@@ -164,14 +162,14 @@ public class SQSQueueHelperTest {
 
     @Test
     public void testShouldCreateQueue() {
-        when(sqsConfig.getMessageRetentionPeriod()).thenReturn(randomNumeric(3));
         when(sqsConfig.isCreateQueueIfNotExists()).thenReturn(true);
-        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn(randomNumeric(4));
+        when(sqsConfig.getMessageRetentionPeriod()).thenReturn("60");
+        when(sqsConfig.getMessageVisibilityTimeout()).thenReturn("0");
 
         final String queueName = randomAlphabetic(10);
         when(sqsConfig.getQueueName()).thenReturn(queueName);
         when(sqsConfig.getRegion()).thenReturn(Regions.EU_CENTRAL_1.getName());
-        when(amazonSQS.getQueueUrl(anyString())).thenThrow(QueueDoesNotExistException.class);
+        when(amazonSQS.getQueueUrl(anyString())).thenThrow(new QueueDoesNotExistException("expected"));
 
         final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
         when(responseMetadata.getHttpStatusCode()).thenReturn(200);
