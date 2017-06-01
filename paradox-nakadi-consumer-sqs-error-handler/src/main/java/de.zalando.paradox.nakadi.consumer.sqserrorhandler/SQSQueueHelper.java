@@ -59,23 +59,26 @@ public class SQSQueueHelper {
 
     private void validateCreateQueueAttributes(final SQSConfig sqsConfig) {
         checkArgument(isNumeric(sqsConfig.getMessageRetentionPeriod()),
-            "messageRetentionPeriod parameter must be numeric.");
+            "messageRetentionPeriod parameter must be numeric, was [%s]", sqsConfig.getMessageRetentionPeriod());
 
         final Integer messageRetentionPeriod = Integer.valueOf(sqsConfig.getMessageRetentionPeriod());
         checkArgument(messageRetentionPeriod > 59 && messageRetentionPeriod < 1209601,
-            "messageRetentionPeriod parameter must be between [60,1209600]");
+            "messageRetentionPeriod parameter must be between [60, 1209600], was [%s]",
+            sqsConfig.getMessageRetentionPeriod());
 
         checkArgument(isNumeric(sqsConfig.getMessageVisibilityTimeout()),
-            "messageVisibilityTimeout parameter must be numeric.");
+            "messageVisibilityTimeout parameter must be numeric, was [%s]", sqsConfig.getMessageVisibilityTimeout());
 
         final Integer messageVisibilityTimeout = Integer.valueOf(sqsConfig.getMessageVisibilityTimeout());
         checkArgument(messageVisibilityTimeout >= 0 && messageVisibilityTimeout < 43200,
-            "messageRetentionPeriod parameter must be between [0,43200]");
+            "messageRetentionPeriod parameter must be between [0, 43200], was [%s]",
+            sqsConfig.getMessageVisibilityTimeout());
 
-        checkArgument(isNotBlank(sqsConfig.getQueueName()), "queueName parameter must not be empty.");
-        checkArgument(isNotBlank(sqsConfig.getRegion()), "region parameter must not be empty.");
+        checkArgument(isNotBlank(sqsConfig.getQueueName()), "queueName parameter must not be empty");
+        checkArgument(isNotBlank(sqsConfig.getRegion()), "region parameter must not be empty");
         checkArgument(Arrays.stream(Regions.values()).anyMatch(region ->
-                    region.getName().equals(sqsConfig.getRegion())), "region parameter must be valid.");
+                    region.getName().equals(sqsConfig.getRegion())), "[%s] is not a valid region",
+            sqsConfig.getRegion());
     }
 
     private boolean shouldCreateANewQueue(final String queueName) {
