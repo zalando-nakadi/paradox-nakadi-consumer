@@ -57,7 +57,7 @@ public class ErrorHandlerConfiguration {
     }
 
     @Bean
-    public SQSFailedEventSource sqsFailedEventSource(final SQSConfig sqsConfig, final AmazonSQS amazonSQS,
+    public SQSFailedEventSource sqsFailedEventSource(final SQSQueueHelper sqsQueueHelper,final SQSConfig sqsConfig, final AmazonSQS amazonSQS,
             @Qualifier("sqsErrorHandlerObjectMapper") final ObjectMapper objectMapper) {
         return new SQSFailedEventSource(sqsConfig, amazonSQS, objectMapper);
     }
