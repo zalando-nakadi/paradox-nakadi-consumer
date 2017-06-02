@@ -53,7 +53,7 @@ public class SQSQueueHelper {
         createQueueRequest.addAttributesEntry(QueueAttributeName.VisibilityTimeout.toString(),
             sqsConfig.getMessageVisibilityTimeout());
         createQueueRequest.addAttributesEntry(QueueAttributeName.MessageRetentionPeriod.toString(),
-            sqsConfig.getMessageVisibilityTimeout());
+            sqsConfig.getMessageRetentionPeriod());
         return createQueueRequest;
     }
 

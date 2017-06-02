@@ -2,6 +2,7 @@ package de.zalando.paradox.nakadi.consumer.sqserrorhandler;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import static org.mockito.Matchers.any;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.when;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -26,6 +28,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
+import com.amazonaws.services.sqs.model.QueueAttributeName;
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 
 public class SQSQueueHelperTest {
@@ -181,6 +184,17 @@ public class SQSQueueHelperTest {
 
         sqsQueueHelper.init();
 
-        verify(amazonSQS).createQueue(any(CreateQueueRequest.class));
+        final ArgumentCaptor<CreateQueueRequest> createQueueRequestArgumentCaptor = ArgumentCaptor.forClass(
+                CreateQueueRequest.class);
+        verify(amazonSQS).createQueue(createQueueRequestArgumentCaptor.capture());
+        assertThat(createQueueRequestArgumentCaptor.getValue().getQueueName()).isEqualTo(queueName);
+        assertThat(createQueueRequestArgumentCaptor.getValue().getAttributes()).containsEntry(
+                                                                                   QueueAttributeName.VisibilityTimeout
+                                                                                           .toString(), "0")
+                                                                               .containsEntry(
+                                                                                   QueueAttributeName
+                                                                                           .MessageRetentionPeriod
+                                                                                           .toString(), "60");
     }
+
 }
