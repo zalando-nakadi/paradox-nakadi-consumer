@@ -7,8 +7,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
@@ -26,7 +24,6 @@ public class ErrorHandlerConfiguration {
     @Bean
     public AmazonSQS amazonSQS(final SQSConfiguration sqsConfiguration) {
         final AmazonSQSClientBuilder amazonSQSClientBuilder = AmazonSQSClientBuilder.standard();
-        amazonSQSClientBuilder.setCredentials(new ProfileCredentialsProvider());
         amazonSQSClientBuilder.setRegion(sqsConfiguration.getRegion());
         return amazonSQSClientBuilder.build();
     }
