@@ -177,8 +177,6 @@ public class SQSFailedEventSourceTest {
     @Test
     public void testShouldFetchFailedEventFromSQS() throws JsonProcessingException {
 
-        final ReceiveMessageResult receiveMessageResult = new ReceiveMessageResult();
-
         final FailedEvent failedEvent = new FailedEvent();
         failedEvent.setRawEvent(randomAlphabetic(10));
         failedEvent.setOffset(randomAlphabetic(10));
@@ -186,27 +184,45 @@ public class SQSFailedEventSourceTest {
         failedEvent.setFailedTimeInMilliSeconds(nextLong(1, 10));
         failedEvent.setEventType(new EventType(randomAlphabetic(10)));
         failedEvent.setPartition(randomAlphabetic(10));
-        failedEvent.setThrowable(new Exception(randomAlphabetic(10)));
+        failedEvent.setStackTrace(randomAlphabetic(10));
 
         final Message message = new Message();
         message.setMessageId(randomAlphabetic(10));
         message.setReceiptHandle(randomAlphabetic(10));
-        message.setBody(new ObjectMapper().writeValueAsString(failedEvent));
+        message.setBody(objectMapper.writeValueAsString(failedEvent));
+
+        final ReceiveMessageResult receiveMessageResult = new ReceiveMessageResult();
         receiveMessageResult.setMessages(Collections.singleton(message));
 
         when(amazonSQS.receiveMessage(anyString())).thenReturn(receiveMessageResult);
 
         final Optional<SQSFailedEvent> sqsFailedEventOptional = sqsFailedEventSource.getFailedEvent();
-
         assertThat(sqsFailedEventOptional).isPresent();
-        assertThat(sqsFailedEventOptional.get().getRawEvent()).isEqualTo(failedEvent.getRawEvent());
-        assertThat(sqsFailedEventOptional.get().getReceiptHandle()).isEqualTo(message.getReceiptHandle());
-        assertThat(sqsFailedEventOptional.get().getConsumerName()).isEqualTo(failedEvent.getConsumerName());
-        assertThat(sqsFailedEventOptional.get().getEventType()).isEqualTo(failedEvent.getEventType());
-        assertThat(sqsFailedEventOptional.get().getId()).isEqualTo(message.getMessageId());
-        assertThat(sqsFailedEventOptional.get().getOffset()).isEqualTo(failedEvent.getOffset());
-        assertThat(sqsFailedEventOptional.get().getPartition()).isEqualTo(failedEvent.getPartition());
-        assertThat(sqsFailedEventOptional.get().getFailedTimeInMilliSeconds()).isEqualTo(
-            failedEvent.getFailedTimeInMilliSeconds());
+
+        final SQSFailedEvent sqsFailedEvent = sqsFailedEventOptional.get();
+        assertThat(sqsFailedEvent.getRawEvent()).isEqualTo(failedEvent.getRawEvent());
+        assertThat(sqsFailedEvent.getReceiptHandle()).isEqualTo(message.getReceiptHandle());
+        assertThat(sqsFailedEvent.getConsumerName()).isEqualTo(failedEvent.getConsumerName());
+        assertThat(sqsFailedEvent.getEventType()).isEqualTo(failedEvent.getEventType());
+        assertThat(sqsFailedEvent.getId()).isEqualTo(message.getMessageId());
+        assertThat(sqsFailedEvent.getOffset()).isEqualTo(failedEvent.getOffset());
+        assertThat(sqsFailedEvent.getPartition()).isEqualTo(failedEvent.getPartition());
+        assertThat(sqsFailedEvent.getStackTrace()).isEqualTo(failedEvent.getStackTrace());
+        assertThat(sqsFailedEvent.getFailedTimeInMilliSeconds()).isEqualTo(failedEvent.getFailedTimeInMilliSeconds());
     }
+
+    @Test
+    public void testShouldIgnoreUnknownFields() throws Exception {
+        final Message message = new Message();
+        message.setBody("{\"unknown_field\": 1}");
+
+        final ReceiveMessageResult receiveMessageResult = new ReceiveMessageResult();
+        receiveMessageResult.setMessages(Collections.singleton(message));
+
+        when(amazonSQS.receiveMessage(anyString())).thenReturn(receiveMessageResult);
+
+        final Optional<SQSFailedEvent> sqsFailedEventOptional = sqsFailedEventSource.getFailedEvent();
+        assertThat(sqsFailedEventOptional).isPresent();
+    }
+
 }

@@ -3,6 +3,7 @@ package de.zalando.paradox.nakadi.consumer.sqserrorhandler;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import static org.mockito.Matchers.any;
@@ -15,7 +16,7 @@ import static org.mockito.Mockito.when;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -35,7 +36,6 @@ import de.zalando.paradox.nakadi.consumer.core.domain.FailedEvent;
 
 public class SQSErrorHandlerTest {
 
-    @InjectMocks
     private SQSErrorHandler sqsErrorHandler;
 
     @Mock
@@ -47,19 +47,40 @@ public class SQSErrorHandlerTest {
     @Mock
     private SQSConfig sqsConfig;
 
+    @Mock
+    private GetQueueUrlResult mockGetQueueUrlResult;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+
+        when(amazonSQS.getQueueUrl(anyString())).thenReturn(mockGetQueueUrlResult);
+        when(mockGetQueueUrlResult.getQueueUrl()).thenReturn("https://example.com");
+
+        sqsErrorHandler = new SQSErrorHandler(sqsConfig, amazonSQS, objectMapper);
+    }
+
+    @Test
+    public void testShouldSetStackTraceAsString() throws Exception {
+        sqsErrorHandler.onError(randomAlphabetic(10), new RuntimeException("expected"),
+            EventTypePartition.of(EventType.of(randomAlphabetic(10)), randomAlphabetic(1)), randomNumeric(10),
+            randomAlphabetic(50));
+
+        final ArgumentCaptor<FailedEvent> failedEventArgumentCaptor = ArgumentCaptor.forClass(FailedEvent.class);
+        verify(objectMapper).writeValueAsString(failedEventArgumentCaptor.capture());
+
+        assertThat(failedEventArgumentCaptor.getValue().getStackTrace()).contains("java.lang.RuntimeException")
+                                                                        .contains("expected");
     }
 
     @Test
     public void testShouldVerifyTheEventCouldNotSendToSQS() throws JsonProcessingException {
-        when(objectMapper.writeValueAsString(any(FailedEvent.class))).thenThrow(JsonProcessingException.class);
+        when(objectMapper.writeValueAsString(any(FailedEvent.class))).thenThrow(new RuntimeException("expected"));
 
         assertThatThrownBy(() ->
                 sqsErrorHandler.onError(randomAlphabetic(10), new RuntimeException(),
                     EventTypePartition.of(EventType.of(randomAlphabetic(10)), randomAlphabetic(1)), randomNumeric(10),
-                    randomAlphabetic(50))).isInstanceOf(JsonProcessingException.class);
+                    randomAlphabetic(50))).isInstanceOf(RuntimeException.class);
     }
 
     @Test
@@ -67,31 +88,23 @@ public class SQSErrorHandlerTest {
         final GetQueueUrlResult getQueueUrlResult = new GetQueueUrlResult();
         getQueueUrlResult.setQueueUrl(randomAlphabetic(10));
 
-        when(amazonSQS.getQueueUrl(anyString())).thenReturn(getQueueUrlResult);
-
         final SendMessageResult sendMessageResult = new SendMessageResult();
 
         final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
         when(responseMetadata.getHttpStatusCode()).thenReturn(400);
         sendMessageResult.setSdkHttpMetadata(responseMetadata);
 
-        when(amazonSQS.sendMessage(any(SendMessageRequest.class))).thenReturn(sendMessageResult);
+        when(amazonSQS.sendMessage(any(SendMessageRequest.class))).thenThrow(new RuntimeException("expected"));
 
         assertThatThrownBy(() ->
                                         sqsErrorHandler.onError(randomAlphabetic(10), new RuntimeException(),
                                             EventTypePartition.of(EventType.of(randomAlphabetic(10)),
                                                 randomAlphabetic(1)), randomNumeric(10), randomAlphabetic(50)))
-            .isInstanceOf(IllegalStateException.class).hasMessageContaining(
-                                    "The result of sending event to SQS is not successful");
+            .isInstanceOf(RuntimeException.class).hasMessageContaining("expected");
     }
 
     @Test
     public void testShouldSendEventToSQS() throws JsonProcessingException {
-        final GetQueueUrlResult getQueueUrlResult = new GetQueueUrlResult();
-        getQueueUrlResult.setQueueUrl(randomAlphabetic(10));
-
-        when(amazonSQS.getQueueUrl(anyString())).thenReturn(getQueueUrlResult);
-
         final SendMessageResult sendMessageResult = new SendMessageResult();
 
         final SdkHttpMetadata responseMetadata = mock(SdkHttpMetadata.class);
@@ -105,7 +118,6 @@ public class SQSErrorHandlerTest {
             randomAlphabetic(50));
 
         verify(objectMapper).writeValueAsString(anyString());
-        verify(amazonSQS).getQueueUrl(anyString());
         verify(amazonSQS).sendMessage(any(SendMessageRequest.class));
     }
 
