@@ -33,39 +33,6 @@ public class SQSConfiguration {
      */
     private boolean enabled;
 
-    /**
-     * Switch for enabling to create the queue if the given queue does not exist.
-     */
-    private boolean createQueueIfNotExists;
-
-    /**
-     * The length of time (in seconds) that a message received from a queue will be invisible to other receiving
-     * components. The value must be between 0 and 43200
-     */
-    private String messageVisibilityTimeout;
-
-    /**
-     * The amount of time that Amazon SQS will retain a message if it does not get deleted. The value must be between 60
-     * and 1209600.
-     */
-    private String messageRetentionPeriod;
-
-    public String getQueueName() {
-        return queueName;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public void setQueueName(final String queueName) {
-        this.queueName = queueName;
-    }
-
-    public void setRegion(final String region) {
-        this.region = region;
-    }
-
     public boolean isEnabled() {
         return enabled;
     }
@@ -74,27 +41,20 @@ public class SQSConfiguration {
         this.enabled = enabled;
     }
 
-    public boolean isCreateQueueIfNotExists() {
-        return createQueueIfNotExists;
+    public String getRegion() {
+        return region;
     }
 
-    public void setCreateQueueIfNotExists(final boolean createQueueIfNotExists) {
-        this.createQueueIfNotExists = createQueueIfNotExists;
+    public void setRegion(final String region) {
+        this.region = region;
     }
 
-    public String getMessageRetentionPeriod() {
-        return messageRetentionPeriod;
+    public String getQueueName() {
+        return queueName;
     }
 
-    public void setMessageRetentionPeriod(final String messageRetentionPeriod) {
-        this.messageRetentionPeriod = messageRetentionPeriod;
+    public void setQueueName(final String queueName) {
+        this.queueName = queueName;
     }
 
-    public String getMessageVisibilityTimeout() {
-        return messageVisibilityTimeout;
-    }
-
-    public void setMessageVisibilityTimeout(final String messageVisibilityTimeout) {
-        this.messageVisibilityTimeout = messageVisibilityTimeout;
-    }
 }
