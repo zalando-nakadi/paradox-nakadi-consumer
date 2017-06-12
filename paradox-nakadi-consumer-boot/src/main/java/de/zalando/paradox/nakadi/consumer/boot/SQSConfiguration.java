@@ -19,9 +19,9 @@ public class SQSConfiguration {
     static final String DEFAULT_SQS_PROPERTIES_PREFIX = "paradox.nakadi.errorHandler.sqs";
 
     /**
-     * SQS Queue Name.
+     * SQS Queue URL.
      */
-    private String queueName;
+    private String queueUrl;
 
     /**
      * AWS Region.
@@ -33,12 +33,12 @@ public class SQSConfiguration {
      */
     private boolean enabled;
 
-    public boolean isEnabled() {
-        return enabled;
+    public String getQueueUrl() {
+        return queueUrl;
     }
 
-    public void setEnabled(final boolean enabled) {
-        this.enabled = enabled;
+    public void setQueueUrl(final String queueUrl) {
+        this.queueUrl = queueUrl;
     }
 
     public String getRegion() {
@@ -49,12 +49,12 @@ public class SQSConfiguration {
         this.region = region;
     }
 
-    public String getQueueName() {
-        return queueName;
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    public void setQueueName(final String queueName) {
-        this.queueName = queueName;
+    public void setEnabled(final boolean enabled) {
+        this.enabled = enabled;
     }
 
 }

@@ -27,7 +27,7 @@ public class ErrorHandlerConfiguration {
 
     @Bean
     public SQSConfig sqsConfig(final SQSConfiguration sqsConfiguration) {
-        return new SQSConfig.Builder().queueUrl(sqsConfiguration.getQueueName()).build();
+        return new SQSConfig.Builder().queueUrl(sqsConfiguration.getQueueUrl()).build();
     }
 
     @Bean

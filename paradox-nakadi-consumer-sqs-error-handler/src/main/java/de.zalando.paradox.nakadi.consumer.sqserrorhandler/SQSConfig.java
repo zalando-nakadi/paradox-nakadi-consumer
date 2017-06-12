@@ -1,11 +1,13 @@
 package de.zalando.paradox.nakadi.consumer.sqserrorhandler;
 
+import static java.util.Objects.requireNonNull;
+
 public class SQSConfig {
 
     private final String queueUrl;
 
     public SQSConfig(final Builder builder) {
-        this.queueUrl = builder.queueUrl;
+        this.queueUrl = requireNonNull(builder.queueUrl, "queueUrl must not be null");
     }
 
     public static class Builder {
