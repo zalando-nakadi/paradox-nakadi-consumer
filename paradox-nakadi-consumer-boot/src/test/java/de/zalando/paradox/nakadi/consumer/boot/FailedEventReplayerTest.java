@@ -186,7 +186,7 @@ public class FailedEventReplayerTest {
         failedEvent.setFailedTimeInMilliSeconds(nextLong(1, 10));
         failedEvent.setEventType(new EventType(randomAlphabetic(10)));
         failedEvent.setPartition(randomAlphabetic(10));
-        failedEvent.setThrowable(new Exception(randomAlphabetic(10)));
+        failedEvent.setStackTrace(randomAlphabetic(10));
         return failedEvent;
     }
 }
