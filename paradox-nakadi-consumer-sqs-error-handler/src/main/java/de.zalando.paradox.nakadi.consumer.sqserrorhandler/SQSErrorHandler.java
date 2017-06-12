@@ -5,10 +5,11 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueUrlResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -25,10 +26,13 @@ public class SQSErrorHandler implements EventErrorHandler {
 
     private final ObjectMapper objectMapper;
 
+    private final String queueUrl;
+
     public SQSErrorHandler(final SQSConfig sqsConfig, final AmazonSQS amazonSQS, final ObjectMapper objectMapper) {
         this.amazonSQS = amazonSQS;
         this.queueName = sqsConfig.getQueueName();
         this.objectMapper = objectMapper;
+        this.queueUrl = amazonSQS.getQueueUrl(queueName).getQueueUrl();
     }
 
     @Override
@@ -54,18 +58,16 @@ public class SQSErrorHandler implements EventErrorHandler {
             failedEvent.setOffset(offset);
             failedEvent.setPartition(eventTypePartition.getPartition());
             failedEvent.setRawEvent(rawEvent);
-            failedEvent.setThrowable(t);
+
+            try(StringWriter stackTraceStringWriter = new StringWriter();
+                    PrintWriter stackTracePrintWriter = new PrintWriter(stackTraceStringWriter)) {
+                t.printStackTrace(stackTracePrintWriter);
+                stackTracePrintWriter.flush();
+                failedEvent.setStackTrace(stackTraceStringWriter.toString());
+            }
 
             final String serializedEvent = objectMapper.writeValueAsString(failedEvent);
-            final GetQueueUrlResult queueUrl = amazonSQS.getQueueUrl(queueName);
-            final SendMessageResult sendMessageResult = amazonSQS.sendMessage(new SendMessageRequest(
-                        queueUrl.getQueueUrl(), serializedEvent));
-
-            if (sendMessageResult.getSdkHttpMetadata().getHttpStatusCode() != 200) {
-                throw new IllegalStateException(String.format(
-                        "The result of sending event to SQS is not successful // Event body = [%s] , HttpStatusCode = [%d]",
-                        serializedEvent, sendMessageResult.getSdkHttpMetadata().getHttpStatusCode()));
-            }
+            amazonSQS.sendMessage(new SendMessageRequest(queueUrl, serializedEvent));
 
         } catch (final Exception e) {
             ThrowableUtils.throwException(e);
