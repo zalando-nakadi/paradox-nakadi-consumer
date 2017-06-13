@@ -10,11 +10,8 @@ paradox:
     errorhandler:
       sqs:
         enabled: false
-        queueName: test-queue-name
+        queueUrl: https://sqs.eu-central-1.amazonaws.com/1234567890/app-failed-events
         region: eu-central-1
-        createQueueIfNotExists: true
-        messageVisibilityTimeout: 120
-        messageRetentionPeriod: 1209600
     defaults:
       nakadiUrl: http://localhost:8080
       partitionCoordinatorProvider: simple

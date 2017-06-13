@@ -19,9 +19,9 @@ public class SQSConfiguration {
     static final String DEFAULT_SQS_PROPERTIES_PREFIX = "paradox.nakadi.errorHandler.sqs";
 
     /**
-     * SQS Queue Name.
+     * SQS Queue URL.
      */
-    private String queueName;
+    private String queueUrl;
 
     /**
      * AWS Region.
@@ -33,33 +33,16 @@ public class SQSConfiguration {
      */
     private boolean enabled;
 
-    /**
-     * Switch for enabling to create the queue if the given queue does not exist.
-     */
-    private boolean createQueueIfNotExists;
+    public String getQueueUrl() {
+        return queueUrl;
+    }
 
-    /**
-     * The length of time (in seconds) that a message received from a queue will be invisible to other receiving
-     * components. The value must be between 0 and 43200
-     */
-    private String messageVisibilityTimeout;
-
-    /**
-     * The amount of time that Amazon SQS will retain a message if it does not get deleted. The value must be between 60
-     * and 1209600.
-     */
-    private String messageRetentionPeriod;
-
-    public String getQueueName() {
-        return queueName;
+    public void setQueueUrl(final String queueUrl) {
+        this.queueUrl = queueUrl;
     }
 
     public String getRegion() {
         return region;
-    }
-
-    public void setQueueName(final String queueName) {
-        this.queueName = queueName;
     }
 
     public void setRegion(final String region) {
@@ -74,27 +57,4 @@ public class SQSConfiguration {
         this.enabled = enabled;
     }
 
-    public boolean isCreateQueueIfNotExists() {
-        return createQueueIfNotExists;
-    }
-
-    public void setCreateQueueIfNotExists(final boolean createQueueIfNotExists) {
-        this.createQueueIfNotExists = createQueueIfNotExists;
-    }
-
-    public String getMessageRetentionPeriod() {
-        return messageRetentionPeriod;
-    }
-
-    public void setMessageRetentionPeriod(final String messageRetentionPeriod) {
-        this.messageRetentionPeriod = messageRetentionPeriod;
-    }
-
-    public String getMessageVisibilityTimeout() {
-        return messageVisibilityTimeout;
-    }
-
-    public void setMessageVisibilityTimeout(final String messageVisibilityTimeout) {
-        this.messageVisibilityTimeout = messageVisibilityTimeout;
-    }
 }

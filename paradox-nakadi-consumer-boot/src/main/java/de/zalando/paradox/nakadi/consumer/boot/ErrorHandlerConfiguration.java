@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSConfig;
 import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSErrorHandler;
 import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSFailedEventSource;
-import de.zalando.paradox.nakadi.consumer.sqserrorhandler.SQSQueueHelper;
 
 @ConditionalOnProperty(value = "enabled", prefix = SQSConfiguration.DEFAULT_SQS_PROPERTIES_PREFIX, havingValue = "true")
 @Configuration
@@ -23,18 +22,12 @@ public class ErrorHandlerConfiguration {
 
     @Bean
     public AmazonSQS amazonSQS(final SQSConfiguration sqsConfiguration) {
-        final AmazonSQSClientBuilder amazonSQSClientBuilder = AmazonSQSClientBuilder.standard();
-        amazonSQSClientBuilder.setRegion(sqsConfiguration.getRegion());
-        return amazonSQSClientBuilder.build();
+        return AmazonSQSClientBuilder.standard().withRegion(sqsConfiguration.getRegion()).build();
     }
 
     @Bean
     public SQSConfig sqsConfig(final SQSConfiguration sqsConfiguration) {
-        return new SQSConfig.Builder().createQueueIfNotExists(sqsConfiguration.isCreateQueueIfNotExists())
-                                      .messageRetentionPeriod(sqsConfiguration.getMessageRetentionPeriod())
-                                      .messageVisibilityTimeout(sqsConfiguration.getMessageVisibilityTimeout())
-                                      .queueName(sqsConfiguration.getQueueName()).region(sqsConfiguration.getRegion())
-                                      .build();
+        return new SQSConfig.Builder().queueUrl(sqsConfiguration.getQueueUrl()).build();
     }
 
     @Bean
@@ -49,14 +42,9 @@ public class ErrorHandlerConfiguration {
     }
 
     @Bean
-    public SQSQueueHelper sqsQueueHelper(final SQSConfig sqsConfig, final AmazonSQS amazonSQS) {
-        return new SQSQueueHelper(sqsConfig, amazonSQS);
-    }
-
-    @Bean
-    public SQSFailedEventSource sqsFailedEventSource(@SuppressWarnings("unused") final SQSQueueHelper sqsQueueHelper,
-            final SQSConfig sqsConfig, final AmazonSQS amazonSQS,
+    public SQSFailedEventSource sqsFailedEventSource(final SQSConfig sqsConfig, final AmazonSQS amazonSQS,
             @Qualifier("sqsErrorHandlerObjectMapper") final ObjectMapper objectMapper) {
         return new SQSFailedEventSource(sqsConfig, amazonSQS, objectMapper);
     }
+
 }

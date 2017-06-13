@@ -80,11 +80,8 @@ paradox:
     errorhandler:
       sqs:
         enabled: true
-        queueName: test-queue-name
+        queueUrl: https://sqs.eu-central-1.amazonaws.com/1234567890/app-failed-events
         region: eu-central-1
-        createQueueIfNotExists: true
-        messageVisibilityTimeout: 120
-        messageRetentionPeriod: 1209600
     defaults:
       nakadiUrl: https://nakadi.example.com
       nakadiTokenId: nakadi-event-stream-read
@@ -460,16 +457,10 @@ Here are the configuration explanations
 
 `paradox.nakadi.errorhandler.sqs.enabled`: If it is true, the handler is bound to context automatically.
 
-`paradox.nakadi.errorhandler.sqs.queueName`: The place where the failed events are stored.
+`paradox.nakadi.errorhandler.sqs.queueUrl`: Amazon SQS URL of the queue to store failed events.
 
 `paradox.nakadi.errorhandler.sqs.region`: See available AWS regions in [AWS Documentation](http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/regions/Regions.html)
 
-`paradox.nakadi.errorhandler.sqs.createQueueIfNotExists`: If the parameter is true, initially, it checks the queue name in amazon then creates it if it does not exist.
-
-`paradox.nakadi.errorhandler.sqs.messageVisibilityTimeout`: See VisibilityTimeout parameter in [AWS Documentation](http://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html)
-
-`paradox.nakadi.errorhandler.sqs.messageRetentionPeriod`: See MessageRetentionPeriod parameter in [AWS Documentation](http://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html)
-     
 ### Spring boot support endpoints
 
 #### Stop and restart event receivers

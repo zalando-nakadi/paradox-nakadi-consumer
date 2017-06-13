@@ -20,19 +20,16 @@ import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 
 public class SQSErrorHandler implements EventErrorHandler {
 
-    private final String queueName;
+    private final String queueUrl;
 
     private final AmazonSQS amazonSQS;
 
     private final ObjectMapper objectMapper;
 
-    private final String queueUrl;
-
     public SQSErrorHandler(final SQSConfig sqsConfig, final AmazonSQS amazonSQS, final ObjectMapper objectMapper) {
         this.amazonSQS = amazonSQS;
-        this.queueName = sqsConfig.getQueueName();
+        this.queueUrl = sqsConfig.getQueueUrl();
         this.objectMapper = objectMapper;
-        this.queueUrl = amazonSQS.getQueueUrl(queueName).getQueueUrl();
     }
 
     @Override

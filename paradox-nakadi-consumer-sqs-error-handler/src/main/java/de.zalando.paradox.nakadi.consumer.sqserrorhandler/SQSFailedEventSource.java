@@ -1,14 +1,11 @@
 package de.zalando.paradox.nakadi.consumer.sqserrorhandler;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Collections;
 import java.util.Optional;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
-import com.amazonaws.services.sqs.model.GetQueueUrlResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.QueueAttributeName;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
@@ -34,7 +31,7 @@ public class SQSFailedEventSource implements FailedEventSource<SQSFailedEvent> {
     public SQSFailedEventSource(final SQSConfig sqsConfig, final AmazonSQS amazonSQS, final ObjectMapper objectMapper) {
         this.amazonSQS = amazonSQS;
         this.objectMapper = objectMapper;
-        this.queueUrl = getQueueUrl(sqsConfig.getQueueName());
+        this.queueUrl = sqsConfig.getQueueUrl();
     }
 
     @Override
@@ -92,10 +89,4 @@ public class SQSFailedEventSource implements FailedEventSource<SQSFailedEvent> {
         }
     }
 
-    private String getQueueUrl(final String queueName) {
-        final GetQueueUrlResult queueUrl = amazonSQS.getQueueUrl(queueName);
-        checkNotNull(queueUrl.getQueueUrl(),
-            String.format("The queue url was not retrieved. Queue name = [%s]", queueName));
-        return queueUrl.getQueueUrl();
-    }
 }
