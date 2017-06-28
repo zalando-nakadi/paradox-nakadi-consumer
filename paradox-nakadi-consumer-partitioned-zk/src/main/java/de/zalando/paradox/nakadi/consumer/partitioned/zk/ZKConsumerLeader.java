@@ -92,6 +92,8 @@ abstract class ZKConsumerLeader<T> {
                 });
         selector.setId(member.getMemberId());
 
+        leaderSelectors.put(t, selector);
+
         LOGGER.info("Init member [{}] leadership for [{}]", member.getMemberId(), t);
 
         // restart selector every time the leadership is lost
