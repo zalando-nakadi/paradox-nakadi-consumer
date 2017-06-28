@@ -42,25 +42,20 @@ public class EventUtils {
 
                 final ArrayNode arrayNode = (ArrayNode) eventsNode;
                 arrayNode.elements().forEachRemaining(element -> {
-                    if (!element.isNull()) {
+                    try {
                         String rawEvent = null;
-                        try {
-                            if (!element.get("metadata").has("event_type")
-                                    || element.get("metadata").get("event_type").asText().equals(eventType.getName())) {
-                                rawEvent = jsonMapper.writeValueAsString(element);
-                            } else {
-                                LOGGER.warn("Unexpected event type (expected=[{}], actual=[{}])", eventType.getName(),
-                                    element.get("metadata").get("event_type").asText());
-                            }
-                        } catch (JsonProcessingException e) {
-                            ThrowableUtils.throwException(e);
+                        if (isEventOfValidType(element, eventType)) {
+                            rawEvent = jsonMapper.writeValueAsString(element);
                         }
 
                         // back to string -> better solution should be provided
                         if (StringUtils.isNotEmpty(rawEvent)) {
                             rawEvents.add(rawEvent);
                         }
+                    } catch (JsonProcessingException e) {
+                        ThrowableUtils.throwException(e);
                     }
+
                 });
             } else {
                 rawEvents = Collections.emptyList();
@@ -86,14 +81,8 @@ public class EventUtils {
 
                 final ArrayNode arrayNode = (ArrayNode) eventsNode;
                 arrayNode.elements().forEachRemaining(element -> {
-                    if (!element.isNull()) {
-                        if (!element.get("metadata").has("event_type")
-                                || element.get("metadata").get("event_type").asText().equals(eventType.getName())) {
-                            jsonEvents.add(element);
-                        } else {
-                            LOGGER.warn("Unexpected event type (expected=[{}], actual=[{}])", eventType.getName(),
-                                element.get("metadata").get("event_type").asText());
-                        }
+                    if (isEventOfValidType(element, eventType)) {
+                        jsonEvents.add(element);
                     }
                 });
             } else {
@@ -106,6 +95,20 @@ public class EventUtils {
             ThrowableUtils.throwException(e);
             return null;
         }
+    }
+
+    private static boolean isEventOfValidType(final JsonNode element, final EventType eventType) {
+        if (!element.isNull() && element.has("metadata")) {
+            if (!element.get("metadata").has("event_type")
+                    || element.get("metadata").get("event_type").asText().equals(eventType.getName())) {
+                return true;
+            } else {
+                LOGGER.warn("Unexpected event type (expected=[{}], actual=[{}])", eventType.getName(),
+                    element.get("metadata").get("event_type").asText());
+            }
+        }
+
+        return false;
     }
 
     private static class EventReader {
