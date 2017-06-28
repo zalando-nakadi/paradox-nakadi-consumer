@@ -15,6 +15,6 @@ public class RawEventResponseBulkHandler extends AbstractEventsResponseBulkHandl
 
     @Override
     NakadiEventBatch<String> getEventBatch(final String string) {
-        return EventUtils.getRawEventBatch(jsonMapper, string);
+        return EventUtils.getRawEventBatch(jsonMapper, string, eventType);
     }
 }

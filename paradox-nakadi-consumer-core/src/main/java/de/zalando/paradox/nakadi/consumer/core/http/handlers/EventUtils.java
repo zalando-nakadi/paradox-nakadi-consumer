@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
+import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiEventBatch;
 import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
@@ -29,7 +30,8 @@ public class EventUtils {
 
     private EventUtils() { }
 
-    public static NakadiEventBatch<String> getRawEventBatch(final ObjectMapper jsonMapper, final String string) {
+    public static NakadiEventBatch<String> getRawEventBatch(final ObjectMapper jsonMapper, final String string,
+            final EventType eventType) {
         try {
             final EventReader reader = new EventReader(jsonMapper, string).invoke();
             final JsonNode eventsNode = reader.getEventsNode();
@@ -43,7 +45,13 @@ public class EventUtils {
                     if (!element.isNull()) {
                         String rawEvent = null;
                         try {
-                            rawEvent = jsonMapper.writeValueAsString(element);
+                            if (!element.get("metadata").has("event_type")
+                                    || element.get("metadata").get("event_type").asText().equals(eventType.getName())) {
+                                rawEvent = jsonMapper.writeValueAsString(element);
+                            } else {
+                                LOGGER.warn("Unexpected event type (expected=[{}], actual=[{}])", eventType.getName(),
+                                    element.get("metadata").get("event_type").asText());
+                            }
                         } catch (JsonProcessingException e) {
                             ThrowableUtils.throwException(e);
                         }
@@ -66,7 +74,8 @@ public class EventUtils {
         }
     }
 
-    public static NakadiEventBatch<JsonNode> getJsonEventBatch(final ObjectMapper jsonMapper, final String string) {
+    public static NakadiEventBatch<JsonNode> getJsonEventBatch(final ObjectMapper jsonMapper, final String string,
+            final EventType eventType) {
         try {
             final EventReader reader = new EventReader(jsonMapper, string).invoke();
             final JsonNode eventsNode = reader.getEventsNode();
@@ -78,7 +87,13 @@ public class EventUtils {
                 final ArrayNode arrayNode = (ArrayNode) eventsNode;
                 arrayNode.elements().forEachRemaining(element -> {
                     if (!element.isNull()) {
-                        jsonEvents.add(element);
+                        if (!element.get("metadata").has("event_type")
+                                || element.get("metadata").get("event_type").asText().equals(eventType.getName())) {
+                            jsonEvents.add(element);
+                        } else {
+                            LOGGER.warn("Unexpected event type (expected=[{}], actual=[{}])", eventType.getName(),
+                                element.get("metadata").get("event_type").asText());
+                        }
                     }
                 });
             } else {

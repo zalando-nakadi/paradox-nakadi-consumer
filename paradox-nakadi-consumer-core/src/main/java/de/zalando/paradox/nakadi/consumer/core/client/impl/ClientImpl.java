@@ -104,7 +104,8 @@ public class ClientImpl implements Client {
     @Override
     public Single<String> getEvent(final EventTypeCursor cursor) {
         final Observable<HttpResponseChunk> request = getContent0(cursor, 1);
-        return request.map(chunk -> getEvent0(chunk.getContent())).firstOrDefault(null).toSingle();
+        return request.map(chunk -> getEvent0(chunk.getContent(), cursor.getEventType())).firstOrDefault(null)
+                      .toSingle();
     }
 
     @Override
@@ -159,8 +160,8 @@ public class ClientImpl implements Client {
                 });
     }
 
-    private String getEvent0(final String content) {
-        final NakadiEventBatch<String> events = EventUtils.getRawEventBatch(objectMapper, content);
+    private String getEvent0(final String content, final EventType eventType) {
+        final NakadiEventBatch<String> events = EventUtils.getRawEventBatch(objectMapper, content, eventType);
         checkArgument(events != null);
         return Iterables.getOnlyElement(events.getEvents());
     }
