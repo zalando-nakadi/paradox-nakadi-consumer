@@ -2,10 +2,12 @@ package de.zalando.paradox.nakadi.consumer.partitioned.zk;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+
+import javax.annotation.concurrent.GuardedBy;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderSelector;
@@ -32,7 +34,8 @@ abstract class ZKConsumerLeader<T> {
 
     private final String consumerName;
 
-    private final ConcurrentMap<T, LeaderSelector> leaderSelectors = new ConcurrentHashMap<>();
+    @GuardedBy("this")
+    private final Map<T, LeaderSelector> leaderSelectors = new HashMap<>();
 
     private final ThreadFactory leaderSelectorThreadFactory;
 
@@ -54,7 +57,8 @@ abstract class ZKConsumerLeader<T> {
 
     public abstract String getLeaderInfoPath(final T t);
 
-    void initGroupLeadership(final T t, final LeadershipChangedListener<T> leadershipChangedListener) throws Exception {
+    synchronized void initGroupLeadership(final T t, final LeadershipChangedListener<T> leadershipChangedListener)
+        throws Exception {
 
         if (leaderSelectors.containsKey(t)) {
             return;
@@ -88,31 +92,32 @@ abstract class ZKConsumerLeader<T> {
                 });
         selector.setId(member.getMemberId());
 
-        if (null == leaderSelectors.putIfAbsent(t, selector)) {
-            LOGGER.info("Init member [{}] leadership for [{}]", member.getMemberId(), t);
+        LOGGER.info("Init member [{}] leadership for [{}]", member.getMemberId(), t);
 
-            // restart selector every time the leadership is lost
-            selector.autoRequeue();
+        // restart selector every time the leadership is lost
+        selector.autoRequeue();
 
-            try {
-                selector.start();
-            } catch (final Throwable throwable) {
-                leaderSelectors.remove(t);
-                selector.close();
-                ThrowableUtils.throwException(throwable);
-            }
+        try {
+            selector.start();
+        } catch (final Throwable throwable) {
+            leaderSelectors.remove(t);
+            selector.close();
+            ThrowableUtils.throwException(throwable);
         }
     }
 
-    public void closeGroupLeadership(final T t) {
+    public synchronized void closeGroupLeadership(final T t) {
         final LeaderSelector leaderSelector = leaderSelectors.remove(t);
         if (null != leaderSelector) {
             LOGGER.info("Close member [{}] leadership for [{}]", member.getMemberId(), t);
             leaderSelector.close();
+        } else {
+            LOGGER.warn("Could not close member [{}] leadership for [{}] because LeaderSelector was not found",
+                member.getMemberId(), t);
         }
     }
 
-    public void close() {
+    public synchronized void close() {
         LOGGER.info("Closing for member [{}]", member.getMemberId());
         leaderSelectors.values().forEach(leaderSelector -> {
             try {
