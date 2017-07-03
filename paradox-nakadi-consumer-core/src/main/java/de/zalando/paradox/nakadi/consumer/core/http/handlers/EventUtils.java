@@ -47,10 +47,8 @@ public class EventUtils {
                 arrayNode.elements().forEachRemaining(element -> {
                     String rawEvent = null;
                     try {
-                        if (isEventOfValidType(element, eventType)) {
-                            rawEvent = jsonMapper.writeValueAsString(element);
-                        }
-
+                        checkEventType(element, eventType);
+                        rawEvent = jsonMapper.writeValueAsString(element);
                     } catch (JsonProcessingException e) {
                         ThrowableUtils.throwException(e);
                     }
@@ -84,9 +82,8 @@ public class EventUtils {
 
                 final ArrayNode arrayNode = (ArrayNode) eventsNode;
                 arrayNode.elements().forEachRemaining(element -> {
-                    if (isEventOfValidType(element, eventType)) {
-                        jsonEvents.add(element);
-                    }
+                    checkEventType(element, eventType);
+                    jsonEvents.add(element);
                 });
             } else {
                 jsonEvents = Collections.emptyList();
@@ -100,18 +97,14 @@ public class EventUtils {
         }
     }
 
-    private static boolean isEventOfValidType(final JsonNode element, final EventType eventType) {
+    private static void checkEventType(final JsonNode element, final EventType eventType) {
         if (!element.isNull() && element.has("metadata")) {
-            if (!element.get("metadata").has("event_type")
-                    || element.get("metadata").get("event_type").asText().equals(eventType.getName())) {
-                return true;
-            } else {
+            if (element.get("metadata").has("event_type")
+                    && !element.get("metadata").get("event_type").asText().equals(eventType.getName())) {
                 throw new InvalidEventTypeException(format("Unexpected event type (expected=[%s], actual=[%s])",
                         eventType.getName(), element.get("metadata").get("event_type").asText()));
             }
         }
-
-        return false;
     }
 
     private static class EventReader {
