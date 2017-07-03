@@ -114,7 +114,7 @@ abstract class ZKConsumerLeader<T> {
             LOGGER.info("Close member [{}] leadership for [{}]", member.getMemberId(), t);
             leaderSelector.close();
         } else {
-            LOGGER.warn("Could not close member [{}] leadership for [{}] because LeaderSelector was not found",
+            LOGGER.trace("Could not close member [{}] leadership for [{}] because LeaderSelector was not found",
                 member.getMemberId(), t);
         }
     }
