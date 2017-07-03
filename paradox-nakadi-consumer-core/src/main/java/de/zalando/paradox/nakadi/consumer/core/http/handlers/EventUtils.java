@@ -1,5 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.core.http.handlers;
 
+import static java.lang.String.format;
+
 import static java.util.Objects.requireNonNull;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -23,6 +25,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiEventBatch;
+import de.zalando.paradox.nakadi.consumer.core.exceptions.InvalidEventTypeException;
 import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 
 public class EventUtils {
@@ -42,20 +45,20 @@ public class EventUtils {
 
                 final ArrayNode arrayNode = (ArrayNode) eventsNode;
                 arrayNode.elements().forEachRemaining(element -> {
+                    String rawEvent = null;
                     try {
-                        String rawEvent = null;
                         if (isEventOfValidType(element, eventType)) {
                             rawEvent = jsonMapper.writeValueAsString(element);
                         }
 
-                        // back to string -> better solution should be provided
-                        if (StringUtils.isNotEmpty(rawEvent)) {
-                            rawEvents.add(rawEvent);
-                        }
                     } catch (JsonProcessingException e) {
                         ThrowableUtils.throwException(e);
                     }
 
+                    // back to string -> better solution should be provided
+                    if (StringUtils.isNotEmpty(rawEvent)) {
+                        rawEvents.add(rawEvent);
+                    }
                 });
             } else {
                 rawEvents = Collections.emptyList();
@@ -103,8 +106,8 @@ public class EventUtils {
                     || element.get("metadata").get("event_type").asText().equals(eventType.getName())) {
                 return true;
             } else {
-                LOGGER.warn("Unexpected event type (expected=[{}], actual=[{}])", eventType.getName(),
-                    element.get("metadata").get("event_type").asText());
+                throw new InvalidEventTypeException(format("Unexpected event type (expected=[%s], actual=[%s])",
+                        eventType.getName(), element.get("metadata").get("event_type").asText()));
             }
         }
 
