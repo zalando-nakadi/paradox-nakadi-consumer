@@ -21,6 +21,7 @@ import de.zalando.paradox.nakadi.consumer.core.domain.EventTypeCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiPartition;
 import de.zalando.paradox.nakadi.consumer.core.exceptions.InvalidEventTypeException;
+import de.zalando.paradox.nakadi.consumer.core.exceptions.UnrecoverableException;
 import de.zalando.paradox.nakadi.consumer.core.http.handlers.testdomain.OrderReceived;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -152,14 +153,15 @@ public class ClientImplTest {
     }
 
     @Test
-    public void testShouldStopProcessingAndThrowExceptionWhenItReceivesWrongEventTypes() throws IOException {
+    public void testShouldStopProcessingAndThrowUnrecoverableExceptionWhenItReceivesWrongEventTypes()
+        throws IOException {
         mockNakadi.enqueue(new MockResponse().setBody(NAKADI_RESPONSE_TWO_ORDERS_ONE_WRONG_TYPE));
 
         final EventTypeCursor cursor = EventTypeCursor.of(EventTypePartition.of(ORDER_RECEIVED, "0"), "0");
         assertThatThrownBy(() -> getEvent(cursor, OrderReceived.class).toBlocking().value()).isInstanceOf(
-                                    InvalidEventTypeException.class).hasMessage(format(
-                                        "Unexpected event type (expected=[%s], actual=[%s])", ORDER_RECEIVED.getName(),
-                                        WRONG_EVENT_TYPE));
+                                    InvalidEventTypeException.class).isInstanceOf(UnrecoverableException.class)
+                                .hasMessage(format("Unexpected event type (expected=[%s], actual=[%s])",
+                                        ORDER_RECEIVED.getName(), WRONG_EVENT_TYPE));
     }
 
     private <T> Single<T> getEvent(final EventTypeCursor cursor, final Class<T> clazz) {

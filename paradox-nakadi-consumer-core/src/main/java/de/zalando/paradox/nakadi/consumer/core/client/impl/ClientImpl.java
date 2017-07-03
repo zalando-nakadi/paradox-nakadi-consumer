@@ -17,9 +17,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,8 +53,6 @@ import rx.Observable;
 import rx.Single;
 
 public class ClientImpl implements Client {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientImpl.class);
 
     private static final TypeReference<List<NakadiPartition>> NAKADI_PARTITIONS_TYPE =
         new TypeReference<List<NakadiPartition>>() { };
@@ -110,16 +105,8 @@ public class ClientImpl implements Client {
     @Override
     public Single<String> getEvent(final EventTypeCursor cursor) {
         final Observable<HttpResponseChunk> request = getContent0(cursor, 1);
-        try {
-            return request.map(chunk -> getEvent0(chunk.getContent(), cursor.getEventType())).firstOrDefault(null)
-                          .toSingle();
-        } catch (InvalidEventTypeException e) {
-            LOGGER.error("Invalid event type error for offset [{}] on partition [{}]: {}", cursor.getOffset(),
-                cursor.getPartition(), e.getMessage());
-            ThrowableUtils.throwException(e);
-        }
-
-        return null;
+        return request.map(chunk -> getEvent0(chunk.getContent(), cursor.getEventType())).firstOrDefault(null)
+                      .toSingle();
     }
 
     @Override

@@ -1,6 +1,6 @@
 package de.zalando.paradox.nakadi.consumer.core.exceptions;
 
-public class InvalidEventTypeException extends RuntimeException {
+public class InvalidEventTypeException extends UnrecoverableException {
     public InvalidEventTypeException() {
         super();
     }
