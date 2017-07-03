@@ -16,6 +16,6 @@ public class JsonEventResponseHandler extends AbstractEventsResponseHandler<Json
 
     @Override
     NakadiEventBatch<JsonNode> getEventBatch(final String string) {
-        return EventUtils.getJsonEventBatch(jsonMapper, string);
+        return EventUtils.getJsonEventBatch(jsonMapper, string, eventType);
     }
 }

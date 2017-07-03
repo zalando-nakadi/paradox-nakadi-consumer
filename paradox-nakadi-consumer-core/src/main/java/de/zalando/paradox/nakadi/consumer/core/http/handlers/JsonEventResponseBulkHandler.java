@@ -17,6 +17,6 @@ public class JsonEventResponseBulkHandler extends AbstractEventsResponseBulkHand
 
     @Override
     NakadiEventBatch<JsonNode> getEventBatch(final String string) {
-        return EventUtils.getJsonEventBatch(jsonMapper, string);
+        return EventUtils.getJsonEventBatch(jsonMapper, string, eventType);
     }
 }

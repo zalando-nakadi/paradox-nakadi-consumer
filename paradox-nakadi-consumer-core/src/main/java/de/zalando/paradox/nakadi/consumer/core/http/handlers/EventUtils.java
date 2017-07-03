@@ -1,5 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.core.http.handlers;
 
+import static java.lang.String.format;
+
 import static java.util.Objects.requireNonNull;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -20,8 +22,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
+import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiCursor;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiEventBatch;
+import de.zalando.paradox.nakadi.consumer.core.exceptions.InvalidEventTypeException;
 import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 
 public class EventUtils {
@@ -29,7 +33,8 @@ public class EventUtils {
 
     private EventUtils() { }
 
-    public static NakadiEventBatch<String> getRawEventBatch(final ObjectMapper jsonMapper, final String string) {
+    public static NakadiEventBatch<String> getRawEventBatch(final ObjectMapper jsonMapper, final String string,
+            final EventType eventType) {
         try {
             final EventReader reader = new EventReader(jsonMapper, string).invoke();
             final JsonNode eventsNode = reader.getEventsNode();
@@ -40,18 +45,17 @@ public class EventUtils {
 
                 final ArrayNode arrayNode = (ArrayNode) eventsNode;
                 arrayNode.elements().forEachRemaining(element -> {
-                    if (!element.isNull()) {
-                        String rawEvent = null;
-                        try {
-                            rawEvent = jsonMapper.writeValueAsString(element);
-                        } catch (JsonProcessingException e) {
-                            ThrowableUtils.throwException(e);
-                        }
+                    String rawEvent = null;
+                    try {
+                        checkEventType(element, eventType);
+                        rawEvent = jsonMapper.writeValueAsString(element);
+                    } catch (JsonProcessingException e) {
+                        ThrowableUtils.throwException(e);
+                    }
 
-                        // back to string -> better solution should be provided
-                        if (StringUtils.isNotEmpty(rawEvent)) {
-                            rawEvents.add(rawEvent);
-                        }
+                    // back to string -> better solution should be provided
+                    if (StringUtils.isNotEmpty(rawEvent)) {
+                        rawEvents.add(rawEvent);
                     }
                 });
             } else {
@@ -66,7 +70,8 @@ public class EventUtils {
         }
     }
 
-    public static NakadiEventBatch<JsonNode> getJsonEventBatch(final ObjectMapper jsonMapper, final String string) {
+    public static NakadiEventBatch<JsonNode> getJsonEventBatch(final ObjectMapper jsonMapper, final String string,
+            final EventType eventType) {
         try {
             final EventReader reader = new EventReader(jsonMapper, string).invoke();
             final JsonNode eventsNode = reader.getEventsNode();
@@ -77,9 +82,8 @@ public class EventUtils {
 
                 final ArrayNode arrayNode = (ArrayNode) eventsNode;
                 arrayNode.elements().forEachRemaining(element -> {
-                    if (!element.isNull()) {
-                        jsonEvents.add(element);
-                    }
+                    checkEventType(element, eventType);
+                    jsonEvents.add(element);
                 });
             } else {
                 jsonEvents = Collections.emptyList();
@@ -90,6 +94,16 @@ public class EventUtils {
             LOGGER.error("Error while parsing event json from [{}]", string, e);
             ThrowableUtils.throwException(e);
             return null;
+        }
+    }
+
+    private static void checkEventType(final JsonNode element, final EventType eventType) {
+        if (!element.isNull() && element.has("metadata")) {
+            if (element.get("metadata").has("event_type")
+                    && !element.get("metadata").get("event_type").asText().equals(eventType.getName())) {
+                throw new InvalidEventTypeException(format("Unexpected event type (expected=[%s], actual=[%s])",
+                        eventType.getName(), element.get("metadata").get("event_type").asText()));
+            }
         }
     }
 

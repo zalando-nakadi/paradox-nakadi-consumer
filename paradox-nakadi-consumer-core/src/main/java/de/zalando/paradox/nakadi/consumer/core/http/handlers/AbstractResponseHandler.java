@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.zalando.paradox.nakadi.consumer.core.domain.EventType;
 import de.zalando.paradox.nakadi.consumer.core.domain.EventTypePartition;
 import de.zalando.paradox.nakadi.consumer.core.domain.NakadiEventCursor;
 import de.zalando.paradox.nakadi.consumer.core.partitioned.PartitionCoordinator;
@@ -19,6 +20,7 @@ abstract class AbstractResponseHandler implements ResponseHandler {
     protected final EventTypePartition eventTypePartition;
     protected final PartitionCoordinator coordinator;
     protected final String consumerName;
+    protected final EventType eventType;
 
     AbstractResponseHandler(final String consumerName, final EventTypePartition eventTypePartition,
             final PartitionCoordinator coordinator, final Logger log, final ObjectMapper jsonMapper) {
@@ -27,6 +29,7 @@ abstract class AbstractResponseHandler implements ResponseHandler {
         this.log = log;
         this.jsonMapper = jsonMapper;
         this.consumerName = consumerName;
+        this.eventType = eventTypePartition.getEventType();
     }
 
     String[] getEvents(final String string) {
