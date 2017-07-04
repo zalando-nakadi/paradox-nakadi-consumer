@@ -26,7 +26,7 @@ buildscript {
         stupsSpringOauth2ClientVersion = '1.0.9'
         propdepsPluginVersion = '0.0.9.RELEASE'
         jaywayVersion = '2.2.0'
-
+        jacocoVersion = '0.7.9'
     }
     repositories {
         mavenLocal()
@@ -211,6 +211,46 @@ configure(allprojects) {
     apply plugin: 'propdeps-maven'
     apply plugin: 'propdeps-idea'
     apply plugin: 'propdeps-eclipse'
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven'
+    apply plugin: 'jacoco'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    jacoco {
+        toolVersion = "${jacocoVersion}"
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+
+        maven { url "http://repo1.maven.org/maven2/" }
+    }
+}
+
+task codeCoverageReport(type: JacocoReport) {
+    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+
+    subprojects.each {
+        sourceSets it.sourceSets.main
+    }
+
+    reports {
+        xml.enabled true
+        xml.destination "${buildDir}/reports/jacoco/report.xml"
+        html.enabled false
+        csv.enabled false
+    }
+}
+
+codeCoverageReport.dependsOn {
+    subprojects*.test
 }
 
 project(":paradox-nakadi-consumer-core") {
