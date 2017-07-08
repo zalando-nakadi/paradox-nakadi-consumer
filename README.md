@@ -1,6 +1,7 @@
 # parardox-nakadi-consumer
 
 [![Build Status](https://travis-ci.org/zalando-incubator/paradox-nakadi-consumer.svg?branch=master)](https://travis-ci.org/zalando-incubator/paradox-nakadi-consumer)
+[![Coverage Status](https://codecov.io/github/zalando-incubator/paradox-nakadi-consumer/coverage.svg?branch=master)](https://codecov.io/github/zalando-incubator/paradox-nakadi-consumer?branch=master)
 [![Maven Central](https://img.shields.io/maven-central/v/org.zalando.paradox/paradox-nakadi-consumer-core.svg)]()
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/zalando-incubator/paradox-nakadi-consumer/master/LICENSE.txt)
 
