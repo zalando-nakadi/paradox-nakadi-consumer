@@ -1,6 +1,7 @@
 package de.zalando.paradox.nakadi.consumer.boot;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -94,8 +95,9 @@ public class EventReceiverRegistryConfiguration {
     }
 
     public Integer getEventsBatchTimeoutSeconds(final String consumer) {
-        return firstNonNull(getConsumerSetting(consumer).getEventsBatchTimeoutSeconds(),
-                nakadiSettings.getDefaults().getEventsBatchTimeoutSeconds());
+        return Stream.of(getConsumerSetting(consumer).getEventsBatchTimeoutSeconds(),
+                         nakadiSettings.getDefaults().getEventsBatchTimeoutSeconds()).filter(Objects::nonNull)
+                     .findFirst().orElse(null);
     }
 
     public Integer getEventsStreamLimit() {
@@ -111,8 +113,8 @@ public class EventReceiverRegistryConfiguration {
     }
 
     public Integer getEventsBatchLimit(final String consumer) {
-        return firstNonNull(getConsumerSetting(consumer).getEventsBatchLimit(),
-                nakadiSettings.getDefaults().getEventsBatchLimit());
+        return Stream.of(getConsumerSetting(consumer).getEventsBatchLimit(),
+                nakadiSettings.getDefaults().getEventsBatchLimit()).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
     private NakadiConsumerSettings getConsumerSetting(final String consumer) {

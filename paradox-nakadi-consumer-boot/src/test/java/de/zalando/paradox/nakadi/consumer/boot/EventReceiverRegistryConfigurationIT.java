@@ -25,7 +25,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
         "paradox.nakadi.defaults.oauth2Enabled: false",                      //
         "paradox.nakadi.defaults.nakadiUrl: http://localhost:8080",          //
         "paradox.nakadi.defaults.eventsBatchLimit: 100",                     //
-        "paradox.nakadi.defaults.eventsBatchTimeoutSeconds: 5",              //
         "paradox.nakadi.consumers.testConsumer.eventsBatchLimit: 1",         //
         "paradox.nakadi.consumers.testConsumer.eventsBatchTimeoutSeconds: 1" //
     }
@@ -52,6 +51,12 @@ public class EventReceiverRegistryConfigurationIT {
         final Integer eventsBatchLimit = eventReceiverRegistryConfiguration.getEventsBatchTimeoutSeconds(
                 "testConsumer");
         assertThat(eventsBatchLimit).isEqualTo(1);
+    }
+
+    @Test
+    public void testShouldReturnNullIfBatchTimeoutSecondsNotConfigured() {
+        assertThat(eventReceiverRegistryConfiguration.getEventsBatchTimeoutSeconds("consumerWithoutBatchTimeout"))
+            .isNull();
     }
 
 }
