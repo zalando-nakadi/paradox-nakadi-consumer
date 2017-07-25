@@ -1,2 +1,14 @@
 X-Zalando-Team: "diamond"
 X-Zalando-Type: code
+ 
+# As there is no Zalando-specific default configuration on github.com,
+# you need to put this in there too.
+# Every PR needs two approvals from Zalando employees.
+approvals:
+  groups:
+    zalando:
+      minimum: 2
+      from:
+        orgs:
+          # Only "zalando" allowed here!
+          - zalando
