@@ -47,7 +47,8 @@ public class EventReceiverRegistry {
 
     private final AtomicBoolean running = new AtomicBoolean(true);
 
-    private final ConcurrentMap<EventTypeConsumer, HttpReactiveReceiver> receiverMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<EventTypeConsumer, HttpReactiveReceiver> eventTypeToPartitionsReceiver =
+        new ConcurrentHashMap<>();
     private final ConcurrentMap<EventTypeConsumer, EventHandler<?>> handlerMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<Pair<String, String>, PartitionCoordinator> coordinatorMap = new ConcurrentHashMap<>();
 
@@ -135,13 +136,13 @@ public class EventReceiverRegistry {
 
         final EventTypeConsumer eventTypeConsumer = new EventTypeConsumer(eventName, consumerName);
         final ConsumerConfig config = withEventHandler(builder, handler).build();
-        final HttpReactiveReceiver receiver = new HttpReactiveReceiver(new HttpGetPartitionsHandler(config));
-        checkState(null == receiverMap.putIfAbsent(eventTypeConsumer, receiver), "Duplicated configuration for [%s]",
-            eventTypeConsumer);
+        final HttpReactiveReceiver partitionsReceiver = new HttpReactiveReceiver(new HttpGetPartitionsHandler(config));
+        checkState(null == eventTypeToPartitionsReceiver.putIfAbsent(eventTypeConsumer, partitionsReceiver),
+            "Duplicated configuration for [%s]", eventTypeConsumer);
         handlerMap.putIfAbsent(eventTypeConsumer, handler);
 
         LOGGER.info("Starting receiver for consumerName [{}] for event type [{}]", consumerName, config.getEventType());
-        receiver.init();
+        partitionsReceiver.init();
     }
 
     private static ConsumerConfig.Builder withEventHandler(final ConsumerConfig.Builder builder,
@@ -214,7 +215,10 @@ public class EventReceiverRegistry {
             }
         });
 
-        receiverMap.values().forEach(receiver -> {
+        // wait for ZK background tasks
+        Thread.sleep(2000);
+
+        eventTypeToPartitionsReceiver.values().forEach(receiver -> {
             try {
                 receiver.close();
             } catch (Exception e) {
@@ -222,16 +226,13 @@ public class EventReceiverRegistry {
             }
         });
 
-        // wait for ZK background tasks
-        Thread.sleep(2000);
-
     }
 
     public void restart() {
         if (running.get()) {
             LOGGER.info("Restart receivers");
 
-            receiverMap.values().forEach(receiver -> {
+            eventTypeToPartitionsReceiver.values().forEach(receiver -> {
                 try {
                     receiver.init();
                 } catch (Exception e) {

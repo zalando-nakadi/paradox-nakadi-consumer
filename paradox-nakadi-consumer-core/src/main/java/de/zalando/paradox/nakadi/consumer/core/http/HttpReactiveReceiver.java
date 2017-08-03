@@ -102,7 +102,7 @@ public class HttpReactiveReceiver implements Closeable {
                         }).flatMap(repeatAttempt -> {
                             final long retryAfterMillis = httpReactiveHandler.getRetryAfterMillis();
                             checkArgument(retryAfterMillis > 0, "RetryAfterMillis must be greater than 0");
-                            log.debug("Restart after [{}] running [{}] reason [{}] attempt : [{}]", retryAfterMillis,
+                            log.debug("Restart after [{}] ms running [{}] reason [{}] attempt : [{}]", retryAfterMillis,
                                     running.get(), reason, repeatAttempt);
                             return Observable.timer(retryAfterMillis, TimeUnit.MILLISECONDS);
                           }).takeUntil((stopPredicate) -> !running.get());

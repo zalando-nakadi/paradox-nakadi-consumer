@@ -28,7 +28,7 @@ import de.zalando.paradox.nakadi.consumer.core.utils.ThrowableUtils;
 
 public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPartitionCoordinator {
     private final ZKMember member;
-    private final ConcurrentMap<EventType, ZKGroupMember> groupMembers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<EventType, ZKGroupMember> eventTypeToGroupMember = new ConcurrentHashMap<>();
     private final ZKConsumerGroupMember consumerGroupMember;
     private final ConsumerPartitionRebalanceStrategy rebalancer;
     private final AtomicBoolean running = new AtomicBoolean(true);
@@ -115,8 +115,8 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
     public void close() {
         if (running.compareAndSet(true, false)) {
             log.info("Closing coordinator for member [{}]", member.getMemberId());
-            groupMembers.entrySet().forEach(groupMember -> groupMember.getValue().close());
-            groupMembers.clear();
+            eventTypeToGroupMember.entrySet().forEach(groupMember -> groupMember.getValue().close());
+            eventTypeToGroupMember.clear();
             consumerPartitionLeader.close();
         } else {
             log.warn("Coordinator for member [{}] is already closed", member.getMemberId());
@@ -165,9 +165,9 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
     }
 
     private void joinGroup(final EventType eventType) {
-        if (!groupMembers.containsKey(eventType)) {
+        if (!eventTypeToGroupMember.containsKey(eventType)) {
             final ZKGroupMember groupMember = consumerGroupMember.newGroupMember(eventType, newGroupChangedListener());
-            if (null == groupMembers.putIfAbsent(eventType, groupMember)) {
+            if (null == eventTypeToGroupMember.putIfAbsent(eventType, groupMember)) {
                 try {
                     log.info("Member [{}] is joining group for event type [{}] ", member.getMemberId(), eventType);
                     groupMember.start();
@@ -195,8 +195,15 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
                 onGroupChanged(eventType);
             }
 
+            /**
+             * Returns the current group members for an {@link EventType}.
+             *
+             * @param   eventType
+             *
+             * @return  A {@link Map} where the key is the memberId
+             */
             private Map<String, ZKMember> getCurrentMembers(final EventType eventType) {
-                final ZKGroupMember groupMember = groupMembers.get(eventType);
+                final ZKGroupMember groupMember = eventTypeToGroupMember.get(eventType);
                 if (null != groupMember) {
                     final Function<Map.Entry<String, byte[]>, ZKMember> valueMapper = entry -> {
                         try {
@@ -221,7 +228,7 @@ public class ZKLeaderConsumerPartitionCoordinator extends AbstractZKConsumerPart
     }
 
     private void leaveGroup(final EventType eventType) {
-        final ZKGroupMember groupMember = groupMembers.remove(eventType);
+        final ZKGroupMember groupMember = eventTypeToGroupMember.remove(eventType);
         if (null != groupMember) {
             log.info("Member [{}] is leaving group for event type [{}]", member.getMemberId(), eventType);
             groupMember.close();
