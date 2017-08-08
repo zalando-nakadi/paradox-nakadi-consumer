@@ -1,7 +1,5 @@
 package de.zalando.paradox.nakadi.consumer.core.http.requests;
 
-import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
-
 import java.io.Closeable;
 import java.io.IOException;
 
@@ -40,7 +38,7 @@ import rx.Observable;
 
 public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionRebalanceListener, Closeable {
 
-    private final ConcurrentMap<String, HttpReactiveReceiver> partitionToReceiver = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, HttpReactiveReceiver> partitionToEventReceiver = new ConcurrentHashMap<>();
 
     private final ConsumerConfig config;
     private final Logger log;
@@ -71,7 +69,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
     public void close() {
         if (rebalanceRegistered.compareAndSet(true, false)) {
             try {
-                final List<EventTypePartition> partitions = partitionToReceiver.keySet().stream().map(partition ->
+                final List<EventTypePartition> partitions = partitionToEventReceiver.keySet().stream().map(partition ->
                             EventTypePartition.of(eventType, partition)).collect(Collectors.toList());
                 log.info("Handler close revokes partitions [{}]", partitions);
                 onPartitionsRevoked(partitions);
@@ -93,7 +91,7 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
         final Optional<List<NakadiPartition>> nakadiPartitions = getPartitions(content);
         if (nakadiPartitions.isPresent()) {
             final EventTypePartitions consumerPartitions = EventTypePartitions.of(eventType,
-                    partitionToReceiver.keySet());
+                    partitionToEventReceiver.keySet());
             coordinator.rebalance(consumerPartitions, nakadiPartitions.get());
         }
     }
@@ -111,19 +109,19 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
     @Override
     public void onPartitionsAssigned(final Collection<EventTypeCursor> cursors) {
         log.trace("onPartitionsAssigned [{}]", cursors);
-        cursors.forEach(this::startReceiver);
+        cursors.forEach(this::startEventReceiver);
     }
 
     @Override
     public void onPartitionsRevoked(final Collection<EventTypePartition> partitions) {
         log.trace("onPartitionsRevoked [{}]", partitions);
-        partitions.forEach(this::stopReceiver);
+        partitions.forEach(this::stopEventReceiver);
     }
 
     @Override
     public void onPartitionsHealthCheck() {
         log.trace("onPartitionsHealthCheck");
-        partitionToReceiver.entrySet().forEach(entry -> {
+        partitionToEventReceiver.entrySet().forEach(entry -> {
             final HttpReactiveReceiver receiver = entry.getValue();
             if (receiver.isRunning() && !receiver.isSubscribed()) {
 
@@ -139,37 +137,37 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
                 // double check
                 if (receiver.isRunning() && !receiver.isSubscribed()) {
                     log.warn("Force stop receiver for partition [{}]", eventTypePartition);
-                    stopReceiver(eventTypePartition);
+                    stopEventReceiver(eventTypePartition);
                 }
             }
         });
     }
 
-    private HttpReactiveReceiver stopReceiver(final EventTypePartition eventTypePartition) {
+    private HttpReactiveReceiver stopEventReceiver(final EventTypePartition eventTypePartition) {
         checkEventTypePartition(eventTypePartition);
 
-        HttpReactiveReceiver receiver = partitionToReceiver.remove(eventTypePartition.getPartition());
+        HttpReactiveReceiver receiver = partitionToEventReceiver.remove(eventTypePartition.getPartition());
         if (null != receiver) {
             try {
-                log.info("Stopping receiver for partition [{}]", eventTypePartition);
+                log.info("Stopping event receiver for partition [{}]", eventTypePartition);
                 receiver.close();
                 log.info("Receiver for partition [{}] stopped", eventTypePartition);
             } catch (Exception e) {
-                log.error("Stopping receiver for partition [{}] failed due to [{}]", eventTypePartition, getMessage(e));
+                log.error("Stopping event receiver for partition [{}] failed", eventTypePartition, e);
             }
         }
 
         return receiver;
     }
 
-    private void startReceiver(final EventTypeCursor cursor) {
+    private void startEventReceiver(final EventTypeCursor cursor) {
         checkEventTypePartition(cursor.getEventTypePartition());
 
         final String partition = cursor.getEventTypePartition().getPartition();
-        HttpReactiveReceiver receiver = partitionToReceiver.get(partition);
-        if (null == receiver) {
-            newReceiver(cursor);
-        } else if (receiver.isRunning() && !receiver.isSubscribed()) {
+        final HttpReactiveReceiver eventReceiver = partitionToEventReceiver.get(partition);
+        if (null == eventReceiver) {
+            newEventReceiver(cursor);
+        } else if (eventReceiver.isRunning() && !eventReceiver.isSubscribed()) {
             try {
                 log.warn("Receiver for cursor [{}] is running but unsubscribed", cursor);
                 Thread.sleep(200);
@@ -178,38 +176,38 @@ public class HttpGetPartitionsHandler implements HttpReactiveHandler, PartitionR
             }
 
             // double check
-            if (receiver.isRunning() && !receiver.isSubscribed()) {
+            if (eventReceiver.isRunning() && !eventReceiver.isSubscribed()) {
                 log.warn("Force restart receiver for cursor [{}]", cursor);
 
-                final HttpReactiveReceiver oldReceiver = stopReceiver(cursor.getEventTypePartition());
-                if (receiver == oldReceiver) {
-                    newReceiver(cursor);
+                final HttpReactiveReceiver oldReceiver = stopEventReceiver(cursor.getEventTypePartition());
+                if (eventReceiver == oldReceiver) {
+                    newEventReceiver(cursor);
                 }
             }
         }
     }
 
-    private void newReceiver(final EventTypeCursor cursor) {
+    private void newEventReceiver(final EventTypeCursor cursor) {
         checkEventTypePartition(cursor.getEventTypePartition());
 
         final String partition = cursor.getEventTypePartition().getPartition();
         HttpReactiveReceiver receiver = null;
         try {
             receiver = new HttpReactiveReceiver(new HttpGetEventsHandler(baseUri, cursor, config));
-            if (null == partitionToReceiver.putIfAbsent(partition, receiver)) {
+            if (null == partitionToEventReceiver.putIfAbsent(partition, receiver)) {
                 log.info("Starting receiver for cursor [{}]", cursor);
                 receiver.init();
                 log.info("Receiver started for cursor [{}]", cursor);
             }
         } catch (Exception e) {
-            log.error("Cannot start receiver for cursor [{}] due to [{}]", cursor, getMessage(e));
+            log.error("Cannot start receiver for cursor [{}]", cursor, e);
             if (null != receiver) {
                 try {
                     receiver.close();
                 } catch (IOException e1) {
-                    log.error("Stopping receiver for cursor [{}] failed due to [{}]", cursor, getMessage(e1));
+                    log.error("Stopping receiver for cursor [{}] failed", cursor, e1);
                 } finally {
-                    partitionToReceiver.remove(partition);
+                    partitionToEventReceiver.remove(partition);
                 }
             }
         }

@@ -57,8 +57,13 @@ public abstract class AbstractPartitionCoordinator implements PartitionCoordinat
     @Override
     public void registerCommitCallback(final EventTypePartition eventTypePartition,
             final PartitionCommitCallback callback) {
-        Preconditions.checkState(null == commitCallbacks.putIfAbsent(eventTypePartition, callback),
-            "PartitionCommitCallback for [%s] already registered", eventTypePartition);
+
+        final PartitionCommitCallback registeredPartitionCommitCallback = commitCallbacks.putIfAbsent(
+                eventTypePartition, callback);
+
+        Preconditions.checkState(null == registeredPartitionCommitCallback,
+            "PartitionCommitCallback for [%s] already registered (try to register callback [%s] but found [%s])",
+            eventTypePartition, callback, registeredPartitionCommitCallback);
     }
 
     @Override
